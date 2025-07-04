@@ -114,10 +114,6 @@ public class AnaliseController : ControllerBase
                     var cabecalhoDimensaoReal = headers[analise.indice_dimensao];
                     var cabecalhoMetricaReal = headers[analise.indice_metrica];
 
-                    // AnaliseController.cs, dentro do Select para o cálculo do Valor
-                    // ===================================================================
-                    // NOVA CORREÇÃO: Lógica de conversão de string para decimal
-                    // ===================================================================
                     var dadosAgrupados = records
                         .GroupBy(rec => (object)((IDictionary<string, object>)rec)[cabecalhoDimensaoReal])
                         .Select(g => new
@@ -125,8 +121,7 @@ public class AnaliseController : ControllerBase
                             Categoria = g.Key,
                             Valor = g.Sum(rec => {
                                 var stringValue = Convert.ToString(((IDictionary<string, object>)rec)[cabecalhoMetricaReal]);
-                                decimal parsedValue = 0m; // Inicializa com 0
-            
+                                decimal parsedValue = 0m;
                                 if (!string.IsNullOrEmpty(stringValue))
                                 {
                                     // 1. Remover "R$" se presente
@@ -146,8 +141,29 @@ public class AnaliseController : ControllerBase
                                 return parsedValue; // Retorna o valor parseado (ou 0 se a conversão falhou)
                             })
                         })
-                        .OrderByDescending(x => x.Valor)
+                        // Ordenação condicional: se a dimensão for data, ordena por data crescente
                         .ToList();
+
+                    // Verifica se a dimensão é uma coluna de data
+                    if (cabecalhoDimensaoReal.ToLower().Contains("data"))
+                    {
+                        dadosAgrupados = dadosAgrupados
+                            .OrderBy(x => {
+                                DateTime dt;
+                                // Tenta converter a categoria para DateTime, se falhar, coloca como DateTime.MinValue
+                                if (DateTime.TryParse(Convert.ToString(x.Categoria), new CultureInfo("pt-BR"), DateTimeStyles.None, out dt))
+                                    return dt;
+                                return DateTime.MinValue;
+                            })
+                            .ToList();
+                    }
+                    else
+                    {
+                        // Mantém a ordenação original (por valor decrescente)
+                        dadosAgrupados = dadosAgrupados
+                            .OrderByDescending(x => x.Valor)
+                            .ToList();
+                    }
 
                     resultadosFinais.Add(new ResultadoGrafico
                     {

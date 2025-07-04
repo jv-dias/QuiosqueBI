@@ -1,4 +1,5 @@
 // DENTRO DE Program.cs
+using QuiosqueBI.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -16,6 +17,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+builder.Services.AddScoped<IAnaliseService, AnaliseService>();
+builder.Services.AddControllers();
+
+
 
 var app = builder.Build();
 

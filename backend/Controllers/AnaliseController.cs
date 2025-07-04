@@ -4,7 +4,6 @@ using System.Globalization;
 using Mscc.GenerativeAI;
 using System.Text.Json;
 using QuiosqueBI.API.Models;
-using System.Text.RegularExpressions;
 
 namespace QuiosqueBI.API.Controllers;
 
@@ -78,15 +77,15 @@ public class AnaliseController : ControllerBase
             var colunasComIndices = string.Join(", ", headers.Select((h, i) => $"'{i}': '{h}'"));
             
             var promptText = $$"""
-                Sua tarefa é agir como um motor de análise de dados. Você receberá um objetivo e uma lista de colunas com seus respectivos índices numéricos. Sua resposta DEVE usar os índices.
-                O objetivo da análise do usuário é: '{contexto}'.
-                A lista de colunas e seus índices disponíveis é: {{{colunasComIndices}}}.
-                Com base no objetivo e nas colunas, sugira até 3 análises relevantes de dimensão e métrica. Para cada sugestão, forneça o índice numérico da coluna de dimensão e o índice numérico da coluna de métrica.
-                Responda APENAS com um objeto JSON válido no formato:
-                [
-                  { "titulo_grafico": "...", "tipo_grafico": "barras|linha|pizza", "indice_dimensao": <numero>, "indice_metrica": <numero> }
-                ]
-                """;
+                               Sua tarefa é agir como um motor de análise de dados. Você receberá um objetivo e uma lista de colunas com seus respectivos índices numéricos. Sua resposta DEVE usar os índices.
+                               O objetivo da análise do usuário é: '{contexto}'.
+                               A lista de colunas e seus índices disponíveis é: {{{colunasComIndices}}}.
+                               Com base no objetivo e nas colunas, sugira até 5 análises relevantes de dimensão e métrica. Para cada sugestão, forneça o índice numérico da coluna de dimensão e o índice numérico da coluna de métrica.
+                               Responda APENAS com um objeto JSON válido no formato:
+                               [
+                                 { "titulo_grafico": "...", "tipo_grafico": "barras|linha|pizza", "indice_dimensao": <numero>, "indice_metrica": <numero> }
+                               ]
+                               """;
             
             var response = await model.GenerateContent(promptText);
             var responseText = response?.Text?.Trim() ?? string.Empty;
@@ -232,15 +231,15 @@ public class AnaliseController : ControllerBase
             
             // O mesmo prompt para obter o plano de análise da IA
             var promptText = $$"""
-                Sua tarefa é agir como um motor de análise de dados. Você receberá um objetivo e uma lista de colunas com seus respectivos índices numéricos. Sua resposta DEVE usar os índices.
-                O objetivo da análise do usuário é: '{contexto}'.
-                A lista de colunas e seus índices disponíveis é: {{{colunasComIndices}}}.
-                Com base no objetivo e nas colunas, sugira até 3 análises relevantes de dimensão e métrica. Para cada sugestão, forneça o índice numérico da coluna de dimensão e o índice numérico da coluna de métrica.
-                Responda APENAS com um objeto JSON válido no formato:
-                [
-                  { "titulo_grafico": "...", "tipo_grafico": "barras|linha|pizza", "indice_dimensao": <numero>, "indice_metrica": <numero> }
-                ]
-                """;
+                               Sua tarefa é agir como um motor de análise de dados. Você receberá um objetivo e uma lista de colunas com seus respectivos índices numéricos. Sua resposta DEVE usar os índices.
+                               O objetivo da análise do usuário é: '{contexto}'.
+                               A lista de colunas e seus índices disponíveis é: {{{colunasComIndices}}}.
+                               Com base no objetivo e nas colunas, sugira até 5 análises relevantes de dimensão e métrica. Para cada sugestão, forneça o índice numérico da coluna de dimensão e o índice numérico da coluna de métrica.
+                               Responda APENAS com um objeto JSON válido no formato:
+                               [
+                                 { "titulo_grafico": "...", "tipo_grafico": "barras|linha|pizza", "indice_dimensao": <numero>, "indice_metrica": <numero> }
+                               ]
+                               """;
             
             var response = await model.GenerateContent(promptText);
             var responseText = response?.Text?.Trim() ?? string.Empty;

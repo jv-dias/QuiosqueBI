@@ -1,30 +1,38 @@
+# node_modules e dependências
+node_modules/
+
+# Build e artefatos de produção
+dist/
+
+# Arquivos de ambiente
+.env
+.env.*
+
+# Cache do Vite e outros
+.vite/
+.cache/
+
 # Logs
-logs
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
+# Arquivos do sistema
 .DS_Store
-dist
-dist-ssr
-coverage
+Thumbs.db
+
+# Configurações de editores/IDEs
+.idea/
+.vscode/
+*.sublime*
+
+# Testes e relatórios
+coverage/
+
+# Outros arquivos temporários
 *.local
+*.swp
+*.swn
+*.bak
 
-/cypress/videos/
-/cypress/screenshots/
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-*.tsbuildinfo

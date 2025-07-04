@@ -1,0 +1,3 @@
+# Ignorar configurações de desenvolvimento
+appsettings.Development.json
+

@@ -1,75 +1,101 @@
-# QuiosqueBI
+# QuiosqueBI - Análise de Dados com IA
 
-Este projeto é composto por um backend em .NET e um frontend em Vue.js, destinado à análise e visualização de dados de vendas.
+**⚠️ Importante:** Este é um projeto de **portfólio** criado para demonstrar habilidades em desenvolvimento Full-Stack com .NET e Vue.js, e a integração com APIs de Inteligência Artificial para análise de dados.
 
-## Estrutura do Projeto
+O QuiosqueBI é uma aplicação web que permite a usuários fazerem upload de um arquivo de dados (CSV) e, através de um simples comando em linguagem natural, receberem análises e visualizações gráficas geradas dinamicamente.
 
-- **backend/**: API desenvolvida em .NET para processamento e análise dos dados.
-- **frontend/**: Aplicação web desenvolvida em Vue.js para visualização e interação com os dados.
+---
 
-## Pré-requisitos
+## Conceito Principal: A Magia da IA
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download)
-- [Node.js](https://nodejs.org/) (recomendado: versão 18 ou superior)
-- [npm](https://www.npmjs.com/) ou [yarn](https://yarnpkg.com/)
+O grande diferencial deste projeto é como ele interpreta a necessidade do usuário. O fluxo é o seguinte:
 
-## Como rodar o projeto
+1.  **Upload e Contexto:** O usuário envia um arquivo CSV e descreve o que deseja analisar (ex: "Quais foram os produtos mais vendidos por cidade?").
+2.  **Inteligência Artificial em Ação:** O backend em .NET não possui regras de negócio fixas. Em vez disso, ele envia os cabeçalhos do arquivo e o objetivo do usuário para a **API do Google Gemini**.
+3.  **Plano de Análise Dinâmico:** A IA do Gemini interpreta a solicitação e retorna um "plano de análise" em formato JSON, sugerindo quais colunas devem ser cruzadas (dimensões e métricas) e qual o melhor tipo de gráfico para cada caso.
+4.  **Processamento e Visualização:** O backend executa o plano de análise recebido, processa os dados e envia os resultados para o frontend em Vue.js, que renderiza os gráficos para o usuário.
 
-### Backend
+Em resumo, o QuiosqueBI usa uma IA generativa como um "motor de análise" dinâmico, capaz de se adaptar a diferentes conjuntos de dados sem precisar de programação prévia para cada cenário.
 
-1. Acesse a pasta `backend`:
-   ```sh
-   cd backend
-   ```
-2. Restaure os pacotes e execute a API:
-   ```sh
-   dotnet restore
-   dotnet run
-   ```
-3. A API estará disponível em `https://localhost:5001` ou `http://localhost:5000`.
+---
 
-### Frontend
+## 🚀 Stack de Tecnologias
 
-1. Acesse a pasta `frontend`:
-   ```sh
-   cd frontend
-   ```
-2. Instale as dependências:
-   ```sh
-   npm install
-   # ou
-   yarn install
-   ```
-3. Execute o servidor de desenvolvimento:
-   ```sh
-   npm run dev
-   # ou
-   yarn dev
-   ```
-4. Acesse a aplicação em `http://localhost:5173` (ou porta configurada pelo Vite).
+* **Backend:** API RESTful com .NET 8
+* **Frontend:** Single Page Application (SPA) com Vue 3 (Composition API) + Vite
+* **Inteligência Artificial:** Google Gemini API
+* **Estilização:** Tailwind CSS
+* **Linguagens:** C#, TypeScript
 
-## Portas Padrão
+---
 
-- **Backend (.NET)**: http://localhost:5000 ou https://localhost:5001
-- **Frontend (Vue.js)**: http://localhost:5173
+## 📋 Pré-requisitos
 
-## Configuração
+* [.NET 8.0 SDK](https://dotnet.microsoft.com/download)
+* [Node.js](https://nodejs.org/) (v18 ou superior)
+* [npm](https://www.npmjs.com/) ou [yarn](https://yarnpkg.com/)
 
-- O arquivo `backend/appsettings.Development.json` contém as configurações de ambiente do backend e não é versionado.
-- Para rodar localmente, crie um arquivo `appsettings.Development.json` na pasta `backend` com as configurações necessárias.
+---
 
-## Funcionalidades
+## ⚙️ Configuração Essencial
 
-- Upload e análise de arquivos CSV com dados.
-- Visualização de dados e gráficos no frontend.
+Para que a integração com a IA funcione, você precisa da sua chave de API do Google Gemini.
 
-## Estrutura de Pastas
+1.  Navegue até a pasta do backend: `cd backend`
+2.  Crie um arquivo chamado `appsettings.Development.json`.
+3.  Adicione sua chave de API dentro dele, como no exemplo abaixo:
 
-```
-backend/    # API .NET
-frontend/   # Aplicação Vue.js
-```
+    ```json
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "Gemini": {
+        "ApiKey": "SUA_CHAVE_API_DO_GEMINI_VAI_AQUI"
+      }
+    }
+    ```
 
-## Licença
+---
 
-Este projeto é de uso interno e não possui licença aberta.
+## ⚡ Como Rodar o Projeto
+
+Você precisará de dois terminais abertos, um para o backend e um para o frontend.
+
+### Backend (.NET API)
+
+1.  **Navegue até a pasta:**
+    ```sh
+    cd backend
+    ```
+2.  **Restaure os pacotes e execute:**
+    ```sh
+    dotnet restore
+    dotnet run
+    ```
+3.  A API estará disponível em `http://localhost:5159` (verifique o arquivo `Properties/launchSettings.json` para as portas exatas).
+
+### Frontend (Vue.js App)
+
+1.  **Navegue até a pasta:**
+    ```sh
+    cd frontend
+    ```
+2.  **Instale as dependências:**
+    ```sh
+    npm install
+    ```
+3.  **Execute o servidor de desenvolvimento:**
+    ```sh
+    npm run dev
+    ```
+4.  Acesse a aplicação no seu navegador em `http://localhost:5173`.
+
+---
+
+## 📜 Licença
+
+Este projeto é de código aberto para fins educacionais e de portfólio, sob a licença MIT. Sinta-se à vontade para clonar, estudar e modificar o código.

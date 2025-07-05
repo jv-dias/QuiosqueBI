@@ -96,6 +96,26 @@ Você precisará de dois terminais abertos, um para o backend e um para o fronte
 
 ---
 
+## 🗺️ Roadmap Futuro
+
+Abaixo estão algumas funcionalidades e melhorias planejadas para futuras versões do QuiosqueBI:
+
+* **Suporte a Múltiplos Formatos de Arquivo:**
+    * Implementar a capacidade de analisar arquivos `.xlsx` (Excel), além do `.csv` atual, tornando a ferramenta mais versátil para diferentes usuários.
+
+* **Persistência de Dados e Histórico de Análises:**
+    * Integrar um banco de dados para salvar as análises geradas.
+    * Criar uma área onde o usuário possa ver e revisitar seu histórico de análises.
+
+* **Autenticação e Autorização de Usuários:**
+    * Implementar um sistema de login/cadastro (provavelmente com JWT) para que cada usuário tenha seu próprio espaço de trabalho e histórico privado.
+
+* **Implantação e Acesso Público (Deployment):**
+    * Configurar pipelines de CI/CD (Continuous Integration/Continuous Deployment) para automatizar o processo de build e deploy.
+    * Hospedar a aplicação em uma plataforma de nuvem (como Azure, AWS ou Vercel/Render) para torná-la acessível publicamente.
+
+---
+
 ## 📜 Licença
 
 Este projeto é de código aberto para fins educacionais e de portfólio, sob a licença MIT. Sinta-se à vontade para clonar, estudar e modificar o código.

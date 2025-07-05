@@ -4,10 +4,11 @@
 <template>
     <nav class="bg-blue-600 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
+            <div class="flex justify-between h-20">
                 <div class="flex items-center">
-                    <RouterLink to="/" class="text-xl font-bold hover:text-blue-200 transition-colors duration-200">
-                        QuiosqueBI
+                    <RouterLink to="/" class="flex items-center hover:opacity-80 transition-opacity duration-200">
+                        <img src="/src/assets/icon.webp" alt="QuiosqueBI" class="h-14 w-14 object-contain mr-3" />
+                        <span class="text-xl font-bold text-white">QuiosqueBI</span>
                     </RouterLink>
                 </div>
                 <div class="flex items-center">
@@ -20,3 +21,16 @@
         </div>
     </nav>
 </template>
+
+<style scoped>
+/* Garantir que a imagem não quebre o layout em diferentes tamanhos */
+img {
+    max-height: 56px;
+    max-width: 200px;
+}
+
+/* Adicionar espaçamento entre imagem e texto */
+.flex.items-center img {
+    margin-right: 12px;
+}
+</style>

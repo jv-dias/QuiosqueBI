@@ -1,8 +1,10 @@
 using CsvHelper;
 using CsvHelper.Configuration;
+using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using Mscc.GenerativeAI;
 using QuiosqueBI.API.Models;
+using System.Dynamic;
 using System.Globalization;
 using System.Text.Json;
 
@@ -17,111 +19,166 @@ namespace QuiosqueBI.API.Services
             _configuration = configuration;
         }
 
+        // MÉTODO PÚBLICO PRINCIPAL
         public async Task<List<ResultadoGrafico>> GerarResultadosAnaliseAsync(IFormFile arquivo, string contexto)
         {
-            var dadosCsv = await LerDadosCsvAsync(arquivo);
-            var planoDeAnalise = await ObterPlanoDeAnaliseAsync(dadosCsv.Headers, contexto);
-            var resultadosFinais = new List<ResultadoGrafico>();
-            
-            if (planoDeAnalise != null)
+            // O "processador" é uma função anônima (lambda) que contém a lógica de negócio.
+            // Ela será executada pelo método que lê o arquivo, garantindo o streaming.
+            var processador = async (DadosArquivo.RDadosArquivo dadosArquivo) =>
             {
-                foreach (var analise in planoDeAnalise)
+                var planoDeAnalise = await ObterPlanoDeAnaliseAsync(dadosArquivo.Headers, contexto);
+                var resultadosFinais = new List<ResultadoGrafico>();
+
+                if (planoDeAnalise != null)
                 {
-                    if (analise.indice_dimensao < 0 || analise.indice_dimensao >= dadosCsv.Headers.Length ||
-                        analise.indice_metrica < 0 || analise.indice_metrica >= dadosCsv.Headers.Length)
+                    // Como os dados (Records) são um IEnumerable, o ToList() aqui é necessário
+                    // para permitir múltiplas iterações (uma para cada análise do plano).
+                    // A grande vantagem é que o consumo de memória do arquivo já foi mínimo até este ponto.
+                    var recordsList = dadosArquivo.Records.ToList();
+
+                    foreach (var analise in planoDeAnalise)
                     {
-                        continue;
-                    }
-
-                    var cabecalhoDimensaoReal = dadosCsv.Headers[analise.indice_dimensao];
-                    var cabecalhoMetricaReal = dadosCsv.Headers[analise.indice_metrica];
-
-                    var dadosAgrupados = dadosCsv.Records
-                        .GroupBy(rec => (object)((IDictionary<string, object>)rec)[cabecalhoDimensaoReal])
-                        .Select(g => new
+                        if (analise.indice_dimensao < 0 || analise.indice_dimensao >= dadosArquivo.Headers.Length ||
+                            analise.indice_metrica < 0 || analise.indice_metrica >= dadosArquivo.Headers.Length)
                         {
-                            Categoria = g.Key,
-                            Valor = g.Sum(rec => {
-                                var stringValue = Convert.ToString(((IDictionary<string, object>)rec)[cabecalhoMetricaReal]);
-                                return ConverterStringParaDecimal(stringValue);
+                            continue;
+                        }
+                        
+                        var cabecalhoDimensaoReal = dadosArquivo.Headers[analise.indice_dimensao];
+                        var cabecalhoMetricaReal = dadosArquivo.Headers[analise.indice_metrica];
+
+                        var dadosAgrupados = recordsList
+                            .AsParallel()
+                            .GroupBy(rec => (object)((IDictionary<string, object>)rec)[cabecalhoDimensaoReal])
+                            .Select(g => new
+                            {
+                                Categoria = g.Key,
+                                Valor = g.Sum(rec => ConverterStringParaDecimal(Convert.ToString(((IDictionary<string, object>)rec)[cabecalhoMetricaReal])))
                             })
-                        })
-                        .ToList();
+                            .ToList();
 
-                    // Ordenação condicional
-                    if (cabecalhoDimensaoReal.ToLower().Contains("data"))
-                    {
-                        dadosAgrupados = dadosAgrupados.OrderBy(x => TentarConverterParaData(x.Categoria)).ToList();
-                    }
-                    else
-                    {
-                        dadosAgrupados = dadosAgrupados.OrderByDescending(x => x.Valor).ToList();
-                    }
+                        if (cabecalhoDimensaoReal.ToLower().Contains("data"))
+                        {
+                            dadosAgrupados = dadosAgrupados
+                                .OrderBy(x => TentarConverterParaData(x.Categoria))
+                                .Select(x => new
+                                {
+                                    Categoria = x.Categoria == null ? null :
+                                        (TentarConverterParaData(x.Categoria) != DateTime.MinValue
+                                            ? (object)TentarConverterParaData(x.Categoria).ToString("yyyy-MM-dd")
+                                            : x.Categoria),
+                                    Valor = x.Valor
+                                })
+                                .ToList();
+                        }
+                        else
+                        {
+                            dadosAgrupados = dadosAgrupados.OrderByDescending(x => x.Valor).ToList();
+                        }
 
-                    resultadosFinais.Add(new ResultadoGrafico
-                    {
-                        Titulo = analise.titulo_grafico,
-                        TipoGrafico = analise.tipo_grafico,
-                        Dados = dadosAgrupados
-                    });
+                        resultadosFinais.Add(new ResultadoGrafico
+                        {
+                            Titulo = analise.titulo_grafico,
+                            TipoGrafico = analise.tipo_grafico,
+                            Dados = dadosAgrupados
+                        });
+                    }
                 }
-            }
+                return resultadosFinais;
+            };
 
-            return resultadosFinais;
+            return await ProcessarArquivoStreamAsync(arquivo, processador);
         }
 
+        // MÉTODO PÚBLICO DE DEBUG
         public async Task<DebugData> GerarDadosDebugAsync(IFormFile arquivo, string contexto)
         {
-            var dadosCsv = await LerDadosCsvAsync(arquivo);
-            var planoDeAnalise = await ObterPlanoDeAnaliseAsync(dadosCsv.Headers, contexto);
-
-            return new DebugData
+            var processador = async (DadosArquivo.RDadosArquivo dadosArquivo) =>
             {
-                CabecalhosDoArquivo = dadosCsv.Headers,
-                DadosBrutosDoArquivo = dadosCsv.Records.Take(10),
-                PlanoDaIA = planoDeAnalise
-            };
-        }
-
-        // ===================================================================
-        // MÉTODOS PRIVADOS REUTILIZÁVEIS
-        // ===================================================================
-
-        private async Task<DadosCSV.DadosCsv> LerDadosCsvAsync(IFormFile arquivo)
-        {
-            byte[] arquivoBytes;
-            using (var ms = new MemoryStream())
-            {
-                await arquivo.CopyToAsync(ms);
-                arquivoBytes = ms.ToArray();
-            }
-
-            string delimitador = ",";
-            using (var previewReader = new StreamReader(new MemoryStream(arquivoBytes)))
-            {
-                var primeiraLinha = await previewReader.ReadLineAsync();
-                if (primeiraLinha != null && primeiraLinha.Contains(";"))
+                var planoDeAnalise = await ObterPlanoDeAnaliseAsync(dadosArquivo.Headers, contexto);
+                return new DebugData
                 {
-                    delimitador = ";";
-                }
-            }
-
-            using (var reader = new StreamReader(new MemoryStream(arquivoBytes)))
-            using (var csv = new CsvReader(reader, new CsvConfiguration(new CultureInfo("pt-BR"))
-            {
-                Delimiter = delimitador,
-                Quote = '"',
-                BadDataFound = null
-            }))
-            {
-                csv.Read();
-                csv.ReadHeader();
-                string[] headers = csv.HeaderRecord ?? Array.Empty<string>();
-                List<dynamic> records = csv.GetRecords<dynamic>().ToList();
-                return new DadosCSV.DadosCsv(headers, records);
-            }
+                    CabecalhosDoArquivo = dadosArquivo.Headers,
+                    DadosBrutosDoArquivo = dadosArquivo.Records.Take(10).ToList(), // Pega só os 10 primeiros
+                    PlanoDaIA = planoDeAnalise
+                };
+            };
+            
+            return await ProcessarArquivoStreamAsync(arquivo, processador);
         }
 
+        // ===================================================================
+        // NOVO MÉTODO CENTRAL PARA LEITURA EM STREAMING
+        // ===================================================================
+private async Task<T> ProcessarArquivoStreamAsync<T>(IFormFile arquivo, Func<DadosArquivo.RDadosArquivo, Task<T>> processador)
+{
+    // Abre o stream do arquivo que será usado por qualquer um dos leitores
+    await using var stream = arquivo.OpenReadStream();
+    var extensao = Path.GetExtension(arquivo.FileName).ToLowerInvariant();
+
+    if (extensao == ".xlsx")
+    {
+        // Garante o suporte a codificações de planilhas antigas
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+        // O bloco 'using' garante que o leitor permanecerá aberto durante o processamento
+        using var reader = ExcelReaderFactory.CreateReader(stream);
+        
+        reader.Read(); // Lê a primeira linha para obter os cabeçalhos
+        var headerList = new List<string>();
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            headerList.Add(reader.GetValue(i)?.ToString() ?? string.Empty);
+        }
+        var headers = headerList.ToArray();
+
+        // Cria o IEnumerable "preguiçoso" para ler as linhas sob demanda
+        var records = LerLinhasExcel(reader, headers);
+
+        // *** PONTO CRÍTICO DA CORREÇÃO ***
+        // Executa o processador AQUI DENTRO do bloco 'using', garantindo que o 'reader' está vivo.
+        return await processador(new DadosArquivo.RDadosArquivo(headers, records));
+    }
+    else // Somente para CSV
+    {
+        using var reader = new StreamReader(stream);
+        var linhas = new List<string>();
+        while (!reader.EndOfStream)
+        {
+            var linha = await reader.ReadLineAsync() ?? "";
+            if (linha.StartsWith("\"") && linha.EndsWith("\""))
+                linha = linha.Substring(1, linha.Length - 2);
+            linhas.Add(linha);
+        }
+        using var stringReader = new StringReader(string.Join('\n', linhas));
+        var config = new CsvConfiguration(new CultureInfo("pt-BR"))
+        {
+            Delimiter = ",", BadDataFound = null
+        };
+        using var csv = new CsvReader(stringReader, config);
+
+        csv.Read();
+        csv.ReadHeader();
+        var headers = csv.HeaderRecord ?? Array.Empty<string>();
+        var records = csv.GetRecords<dynamic>();
+        return await processador(new DadosArquivo.RDadosArquivo(headers, records));
+    }
+}
+        private IEnumerable<dynamic> LerLinhasExcel(IExcelDataReader reader, string[] headers)
+        {
+            while (reader.Read())
+            {
+                var expando = new ExpandoObject() as IDictionary<string, object>;
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    expando[headers[i]] = reader.GetValue(i);
+                }
+                yield return expando; // Retorna uma linha de cada vez (streaming)
+            }
+        }
+        
+        // ... (Seus outros métodos privados: ObterPlanoDeAnaliseAsync, ConverterStringParaDecimal, TentarConverterParaData)
+        // Eles permanecem os mesmos.
         private async Task<List<AnaliseSugerida>?> ObterPlanoDeAnaliseAsync(string[] headers, string contexto)
         {
             var apiKey = _configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Chave da API do Gemini não configurada.");

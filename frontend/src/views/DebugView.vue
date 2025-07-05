@@ -53,10 +53,10 @@ function renderDataCell(item: Record<string, any>, header: string): any {
         <div class="space-y-6">
           <div>
             <label for="debug-file-upload" class="block text-sm font-medium text-gray-700">
-              1. Selecione a planilha (.csv) para depuração
+              1. Selecione a planilha (.csv ou .xlsx) para depuração
             </label>
             <div class="mt-1">
-              <input id="debug-file-upload" name="debug-file-upload" type="file" accept=".csv"
+              <input id="debug-file-upload" name="debug-file-upload" type="file" accept=".csv,.xlsx"
                 @change="handleFileChangeDebug" class="block w-full text-sm text-slate-500
                               file:mr-4 file:py-2 file:px-4
                               file:rounded-md file:border-0

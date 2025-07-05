@@ -37,10 +37,10 @@ async function handleSubmit() {
     <form class="space-y-6" @submit.prevent="handleSubmit">
       <div>
         <label for="file-upload" class="block text-sm font-medium text-gray-700">
-          1. Selecione sua planilha (.csv)
+          1. Selecione sua planilha (.csv ou .xlsx)
         </label>
         <div class="mt-1">
-          <input id="file-upload" name="file-upload" type="file" accept=".csv" @change="handleFileChange" class="block w-full text-sm text-slate-500
+          <input id="file-upload" name="file-upload" type="file" accept=".csv,.xlsx" @change="handleFileChange" class="block w-full text-sm text-slate-500
                    file:mr-4 file:py-2 file:px-4
                    file:rounded-md file:border-0
                    file:text-sm file:font-semibold

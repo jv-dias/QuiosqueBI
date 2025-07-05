@@ -47,7 +47,7 @@ function mapChartType(tipoApi: string): string {
           </div>
         </div>
         <div v-else class="text-center p-4 bg-blue-50 text-blue-700 rounded-lg">
-          <p>Envie um arquivo CSV e um contexto para gerar análises.</p>
+          <p>Envie um arquivo CSV ou XLSX e um contexto para gerar análises.</p>
         </div>
       </div>
     </main>

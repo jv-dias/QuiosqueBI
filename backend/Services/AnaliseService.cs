@@ -7,88 +7,104 @@ using QuiosqueBI.API.Models;
 using System.Dynamic;
 using System.Globalization;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using QuiosqueBI.API.Data;
 
 namespace QuiosqueBI.API.Services
 {
     public class AnaliseService : IAnaliseService
     {
         private readonly IConfiguration _configuration;
+        private readonly ApplicationDbContext _context;
 
-        public AnaliseService(IConfiguration configuration)
+        public AnaliseService(IConfiguration configuration, ApplicationDbContext context)
         {
             _configuration = configuration;
+            _context = context;
         }
 
         // MÉTODO PÚBLICO PRINCIPAL
-        public async Task<List<ResultadoGrafico>> GerarResultadosAnaliseAsync(IFormFile arquivo, string contexto)
+public async Task<List<ResultadoGrafico>> GerarResultadosAnaliseAsync(IFormFile arquivo, string contexto)
+{
+    // O "processador" é uma função anônima (lambda) que contém a lógica de negócio.
+    var processador = async (DadosArquivo.RDadosArquivo dadosArquivo) =>
+    {
+        var planoDeAnalise = await ObterPlanoDeAnaliseAsync(dadosArquivo.Headers, contexto);
+        var resultadosFinais = new List<ResultadoGrafico>();
+
+        if (planoDeAnalise != null)
         {
-            // O "processador" é uma função anônima (lambda) que contém a lógica de negócio.
-            // Ela será executada pelo método que lê o arquivo, garantindo o streaming.
-            var processador = async (DadosArquivo.RDadosArquivo dadosArquivo) =>
+            var recordsList = dadosArquivo.Records.ToList();
+
+            foreach (var analise in planoDeAnalise)
             {
-                var planoDeAnalise = await ObterPlanoDeAnaliseAsync(dadosArquivo.Headers, contexto);
-                var resultadosFinais = new List<ResultadoGrafico>();
-
-                if (planoDeAnalise != null)
+                if (analise.indice_dimensao < 0 || analise.indice_dimensao >= dadosArquivo.Headers.Length ||
+                    analise.indice_metrica < 0 || analise.indice_metrica >= dadosArquivo.Headers.Length)
                 {
-                    // Como os dados (Records) são um IEnumerable, o ToList() aqui é necessário
-                    // para permitir múltiplas iterações (uma para cada análise do plano).
-                    // A grande vantagem é que o consumo de memória do arquivo já foi mínimo até este ponto.
-                    var recordsList = dadosArquivo.Records.ToList();
-
-                    foreach (var analise in planoDeAnalise)
-                    {
-                        if (analise.indice_dimensao < 0 || analise.indice_dimensao >= dadosArquivo.Headers.Length ||
-                            analise.indice_metrica < 0 || analise.indice_metrica >= dadosArquivo.Headers.Length)
-                        {
-                            continue;
-                        }
-                        
-                        var cabecalhoDimensaoReal = dadosArquivo.Headers[analise.indice_dimensao];
-                        var cabecalhoMetricaReal = dadosArquivo.Headers[analise.indice_metrica];
-
-                        var dadosAgrupados = recordsList
-                            .AsParallel()
-                            .GroupBy(rec => (object)((IDictionary<string, object>)rec)[cabecalhoDimensaoReal])
-                            .Select(g => new
-                            {
-                                Categoria = g.Key,
-                                Valor = g.Sum(rec => ConverterStringParaDecimal(Convert.ToString(((IDictionary<string, object>)rec)[cabecalhoMetricaReal])))
-                            })
-                            .ToList();
-
-                        if (cabecalhoDimensaoReal.ToLower().Contains("data"))
-                        {
-                            dadosAgrupados = dadosAgrupados
-                                .OrderBy(x => TentarConverterParaData(x.Categoria))
-                                .Select(x => new
-                                {
-                                    Categoria = x.Categoria == null ? null :
-                                        (TentarConverterParaData(x.Categoria) != DateTime.MinValue
-                                            ? (object)TentarConverterParaData(x.Categoria).ToString("yyyy-MM-dd")
-                                            : x.Categoria),
-                                    Valor = x.Valor
-                                })
-                                .ToList();
-                        }
-                        else
-                        {
-                            dadosAgrupados = dadosAgrupados.OrderByDescending(x => x.Valor).ToList();
-                        }
-
-                        resultadosFinais.Add(new ResultadoGrafico
-                        {
-                            Titulo = analise.titulo_grafico,
-                            TipoGrafico = analise.tipo_grafico,
-                            Dados = dadosAgrupados
-                        });
-                    }
+                    continue;
                 }
-                return resultadosFinais;
-            };
 
-            return await ProcessarArquivoStreamAsync(arquivo, processador);
+                var cabecalhoDimensaoReal = dadosArquivo.Headers[analise.indice_dimensao];
+                var cabecalhoMetricaReal = dadosArquivo.Headers[analise.indice_metrica];
+
+                var dadosAgrupados = recordsList
+                    .AsParallel()
+                    .GroupBy(rec => (object)((IDictionary<string, object>)rec)[cabecalhoDimensaoReal])
+                    .Select(g => new
+                    {
+                        Categoria = g.Key,
+                        Valor = g.Sum(rec => ConverterStringParaDecimal(Convert.ToString(((IDictionary<string, object>)rec)[cabecalhoMetricaReal])))
+                    })
+                    .ToList();
+
+                if (cabecalhoDimensaoReal.ToLower().Contains("data"))
+                {
+                    dadosAgrupados = dadosAgrupados
+                        .OrderBy(x => TentarConverterParaData(x.Categoria))
+                        .Select(x => new
+                        {
+                            Categoria = x.Categoria == null ? null :
+                                (TentarConverterParaData(x.Categoria) != DateTime.MinValue
+                                    ? (object)TentarConverterParaData(x.Categoria).ToString("yyyy-MM-dd")
+                                    : x.Categoria),
+                            Valor = x.Valor
+                        })
+                        .ToList();
+                }
+                else
+                {
+                    dadosAgrupados = dadosAgrupados.OrderByDescending(x => x.Valor).ToList();
+                }
+
+                resultadosFinais.Add(new ResultadoGrafico
+                {
+                    Titulo = analise.titulo_grafico,
+                    TipoGrafico = analise.tipo_grafico,
+                    Dados = dadosAgrupados
+                });
+            }
+            
+            // Salvar os resultados no banco de dados
+            await SalvarResultadosNoBancoAsync(resultadosFinais, contexto);
         }
+        return resultadosFinais;
+    };
+
+    return await ProcessarArquivoStreamAsync(arquivo, processador);
+}
+
+// Método auxiliar para salvar resultados no banco
+private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultados, string contexto)
+{
+    var analiseSalva = new AnaliseSalva
+    {
+        Contexto = contexto,
+        DataCriacao = DateTime.UtcNow,
+        ResultadosJson = JsonSerializer.Serialize(resultados)
+    };
+    
+    await SalvarAnalise(analiseSalva);
+}
 
         // MÉTODO PÚBLICO DE DEBUG
         public async Task<DebugData> GerarDadosDebugAsync(IFormFile arquivo, string contexto)
@@ -110,60 +126,60 @@ namespace QuiosqueBI.API.Services
         // ===================================================================
         // NOVO MÉTODO CENTRAL PARA LEITURA EM STREAMING
         // ===================================================================
-private async Task<T> ProcessarArquivoStreamAsync<T>(IFormFile arquivo, Func<DadosArquivo.RDadosArquivo, Task<T>> processador)
-{
-    // Abre o stream do arquivo que será usado por qualquer um dos leitores
-    await using var stream = arquivo.OpenReadStream();
-    var extensao = Path.GetExtension(arquivo.FileName).ToLowerInvariant();
-
-    if (extensao == ".xlsx")
-    {
-        // Garante o suporte a codificações de planilhas antigas
-        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
-        // O bloco 'using' garante que o leitor permanecerá aberto durante o processamento
-        using var reader = ExcelReaderFactory.CreateReader(stream);
-        
-        reader.Read(); // Lê a primeira linha para obter os cabeçalhos
-        var headerList = new List<string>();
-        for (int i = 0; i < reader.FieldCount; i++)
+        private async Task<T> ProcessarArquivoStreamAsync<T>(IFormFile arquivo, Func<DadosArquivo.RDadosArquivo, Task<T>> processador)
         {
-            headerList.Add(reader.GetValue(i)?.ToString() ?? string.Empty);
+            // Abre o stream do arquivo que será usado por qualquer um dos leitores
+            await using var stream = arquivo.OpenReadStream();
+            var extensao = Path.GetExtension(arquivo.FileName).ToLowerInvariant();
+
+            if (extensao == ".xlsx")
+            {
+                // Garante o suporte a codificações de planilhas antigas
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+                // O bloco 'using' garante que o leitor permanecerá aberto durante o processamento
+                using var reader = ExcelReaderFactory.CreateReader(stream);
+                
+                reader.Read(); // Lê a primeira linha para obter os cabeçalhos
+                var headerList = new List<string>();
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    headerList.Add(reader.GetValue(i)?.ToString() ?? string.Empty);
+                }
+                var headers = headerList.ToArray();
+
+                // Cria o IEnumerable "preguiçoso" para ler as linhas sob demanda
+                var records = LerLinhasExcel(reader, headers);
+
+                // *** PONTO CRÍTICO DA CORREÇÃO ***
+                // Executa o processador AQUI DENTRO do bloco 'using', garantindo que o 'reader' está vivo.
+                return await processador(new DadosArquivo.RDadosArquivo(headers, records));
+            }
+            else // Somente para CSV
+            {
+                using var reader = new StreamReader(stream);
+                var linhas = new List<string>();
+                while (!reader.EndOfStream)
+                {
+                    var linha = await reader.ReadLineAsync() ?? "";
+                    if (linha.StartsWith("\"") && linha.EndsWith("\""))
+                        linha = linha.Substring(1, linha.Length - 2);
+                    linhas.Add(linha);
+                }
+                using var stringReader = new StringReader(string.Join('\n', linhas));
+                var config = new CsvConfiguration(new CultureInfo("pt-BR"))
+                {
+                    Delimiter = ",", BadDataFound = null
+                };
+                using var csv = new CsvReader(stringReader, config);
+
+                csv.Read();
+                csv.ReadHeader();
+                var headers = csv.HeaderRecord ?? Array.Empty<string>();
+                var records = csv.GetRecords<dynamic>();
+                return await processador(new DadosArquivo.RDadosArquivo(headers, records));
+            }
         }
-        var headers = headerList.ToArray();
-
-        // Cria o IEnumerable "preguiçoso" para ler as linhas sob demanda
-        var records = LerLinhasExcel(reader, headers);
-
-        // *** PONTO CRÍTICO DA CORREÇÃO ***
-        // Executa o processador AQUI DENTRO do bloco 'using', garantindo que o 'reader' está vivo.
-        return await processador(new DadosArquivo.RDadosArquivo(headers, records));
-    }
-    else // Somente para CSV
-    {
-        using var reader = new StreamReader(stream);
-        var linhas = new List<string>();
-        while (!reader.EndOfStream)
-        {
-            var linha = await reader.ReadLineAsync() ?? "";
-            if (linha.StartsWith("\"") && linha.EndsWith("\""))
-                linha = linha.Substring(1, linha.Length - 2);
-            linhas.Add(linha);
-        }
-        using var stringReader = new StringReader(string.Join('\n', linhas));
-        var config = new CsvConfiguration(new CultureInfo("pt-BR"))
-        {
-            Delimiter = ",", BadDataFound = null
-        };
-        using var csv = new CsvReader(stringReader, config);
-
-        csv.Read();
-        csv.ReadHeader();
-        var headers = csv.HeaderRecord ?? Array.Empty<string>();
-        var records = csv.GetRecords<dynamic>();
-        return await processador(new DadosArquivo.RDadosArquivo(headers, records));
-    }
-}
         private IEnumerable<dynamic> LerLinhasExcel(IExcelDataReader reader, string[] headers)
         {
             while (reader.Read())
@@ -230,6 +246,17 @@ private async Task<T> ProcessarArquivoStreamAsync<T>(IFormFile arquivo, Func<Dad
                 return dt;
             }
             return DateTime.MinValue;
+        }
+        
+        public async Task<List<AnaliseSalva>> ListarAnalisesSalvasAsync()
+        {
+            return await _context.AnalisesSalvas.ToListAsync();
+        }
+
+        public async Task SalvarAnalise(AnaliseSalva analise)
+        {
+            _context.AnalisesSalvas.Add(analise);
+            await _context.SaveChangesAsync();
         }
     }
 }

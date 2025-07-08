@@ -1,4 +1,7 @@
 // DENTRO DE Program.cs
+
+using Microsoft.EntityFrameworkCore;
+using QuiosqueBI.API.Data;
 using QuiosqueBI.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +16,9 @@ builder.Services.AddCors(options =>
                 .AllowAnyMethod();
         });
 });
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

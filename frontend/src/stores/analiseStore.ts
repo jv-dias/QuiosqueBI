@@ -95,7 +95,25 @@ export const useAnaliseStore = defineStore('analise', () => {
       carregandoDebug.value = false;
     }
   }
-  // ===================================================================
+
+  // Adicione um novo estado para o histórico
+const historico = ref<any[]>([]); // Use 'any' por enquanto, pode criar a interface depois
+
+// Adicione uma nova action para buscar o histórico
+async function buscarHistorico() {
+  carregando.value = true;
+  erro.value = null;
+  try {
+    const urlDaApi = 'http://localhost:5159/api/analise/historico';
+    const response = await axios.get(urlDaApi);
+    historico.value = response.data;
+  } catch (e: any) {
+    erro.value = e.response?.data || e.message || 'Ocorreu um erro ao buscar o histórico.';
+    console.error(e);
+  } finally {
+    carregando.value = false;
+  }
+}
 
   return { 
     resultados, 
@@ -104,6 +122,8 @@ export const useAnaliseStore = defineStore('analise', () => {
     debugInfo, 
     carregandoDebug, // Retorna o novo estado
     analisarArquivo, 
-    obterDadosDepuracao // Retorna a nova action
+    obterDadosDepuracao, // Retorna a nova action,
+    historico,
+    buscarHistorico
   }
 })

@@ -9,5 +9,11 @@ namespace QuiosqueBI.API.Services
 
         // Método que encapsula toda a lógica da rota /debug
         Task<DebugData> GerarDadosDebugAsync(IFormFile arquivo, string contexto);
+        
+        // Método para listar análises salvas
+        Task<List<AnaliseSalva>> ListarAnalisesSalvasAsync();
+        
+        // Método para Obter uma análise salva por ID
+        Task<AnaliseSalva?> ObterAnaliseSalvaPorIdAsync(int id);
     }
 }

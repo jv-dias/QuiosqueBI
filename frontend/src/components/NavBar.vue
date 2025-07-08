@@ -16,6 +16,10 @@
                         class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                         Painel de Depuração
                     </RouterLink>
+                    <RouterLink to="/historico"
+                        class="ml-4 bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                        Histórico de Análises
+                    </RouterLink>
                 </div>
             </div>
         </div>

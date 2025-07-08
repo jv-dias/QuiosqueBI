@@ -13,7 +13,8 @@ public class AnaliseController : ControllerBase
     {
         _analiseService = analiseService;
     }
-
+    
+    // Rota para upload de arquivo e geração de resultados
     [HttpPost("upload")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -36,7 +37,7 @@ public class AnaliseController : ControllerBase
             return StatusCode(500, $"Ocorreu um erro interno: {ex.Message}");
         }
     }
-
+    // Rota para depuração, que retorna dados brutos e sugestões da IA
     [HttpPost("debug")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -56,6 +57,45 @@ public class AnaliseController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, $"Ocorreu um erro interno na rota de depuração: {ex.Message}");
+        }
+    }
+    
+    // Rota para listar análises salvas
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [HttpGet("historico")]
+    public async Task<IActionResult> ListarHistorico()
+    {
+        try
+        {
+            var historico = await _analiseService.ListarAnalisesSalvasAsync();
+            return Ok(historico);
+        }
+        catch (Exception ex)
+        {
+            // Idealmente, logar o erro
+            return StatusCode(500, $"Ocorreu um erro interno: {ex.Message}");
+        }
+    }
+    
+    // Rota para obter uma análise salva por ID
+    [HttpGet("historico/{id}")]
+    public async Task<IActionResult> ObterHistoricoPorId(int id)
+    {
+        try
+        {
+            var analise = await _analiseService.ObterAnaliseSalvaPorIdAsync(id);
+
+            if (analise == null)
+            {
+                return NotFound(); // Retorna 404 Not Found se o ID não existir
+            }
+
+            return Ok(analise);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Ocorreu um erro interno: {ex.Message}");
         }
     }
 }

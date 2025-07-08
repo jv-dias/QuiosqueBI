@@ -258,5 +258,11 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
             _context.AnalisesSalvas.Add(analise);
             await _context.SaveChangesAsync();
         }
+        
+        public async Task<AnaliseSalva?> ObterAnaliseSalvaPorIdAsync(int id)
+        {
+            // FindAsync é a forma mais otimizada de buscar uma entidade pela sua chave primária.
+            return await _context.AnalisesSalvas.FindAsync(id);
+        }
     }
 }

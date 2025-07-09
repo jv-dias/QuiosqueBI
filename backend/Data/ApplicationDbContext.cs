@@ -1,10 +1,12 @@
 // DENTRO DE Data/ApplicationDbContext.cs
+
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using QuiosqueBI.API.Models;
 
 namespace QuiosqueBI.API.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {

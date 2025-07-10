@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 
 
 const authStore = useAuthStore();
 const { isAuthenticated } = storeToRefs(authStore);
+const route = useRoute();
 
 // Função para lidar com o logout
 const handleLogout = () => {
@@ -37,11 +38,11 @@ const handleLogout = () => {
                     </template>
                     
                     <template v-else>
-                        <RouterLink to="/login"
+                        <RouterLink v-if="route.name !== 'login'" to="/login"
                             class="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-200">
                             Login
                         </RouterLink>
-                        <RouterLink to="/register"
+                        <RouterLink v-if="route.name !== 'register'" to="/register"
                             class="bg-white text-blue-600 hover:bg-gray-200 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                             Registrar
                         </RouterLink>

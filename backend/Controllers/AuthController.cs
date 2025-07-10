@@ -8,7 +8,7 @@ using System.Security.Claims;
 using System.Text;
 
 // DTOs (Data Transfer Objects) para receber os dados do frontend
-public record RegisterDto(string Email, string Password);
+public record RegisterDto(string Nome, string Sobrenome, string Email, string Password);
 public record LoginDto(string Email, string Password);
 
 [ApiController]
@@ -35,12 +35,14 @@ public class AuthController : ControllerBase
         {
             Email = model.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
-            UserName = model.Email // Usamos o email como username
+            // *** LÓGICA ATUALIZADA AQUI ***
+            UserName = $"{model.Nome}-{model.Sobrenome}" // Cria o username a partir do nome e sobrenome
         };
 
         var result = await _userManager.CreateAsync(user, model.Password);
         if (!result.Succeeded)
-            return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "Falha ao criar usuário!", Errors = result.Errors });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "Falha ao criar usuário!", Errors = result.Errors });        
+        await _userManager.AddToRoleAsync(user, "Usuario");
 
         return Ok(new { Message = "Usuário criado com sucesso!" });
     }

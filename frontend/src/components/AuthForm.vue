@@ -20,6 +20,9 @@ const props = defineProps({
 // 2. Definimos os eventos que o componente pode emitir para o pai
 const emit = defineEmits(['submit']);
 
+
+const nome = ref('');
+const sobrenome = ref('');
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
@@ -29,9 +32,14 @@ const handleSubmit = () => {
     alert('As senhas não coincidem!');
     return;
   }
-  
-  // 3. Emitimos o evento 'submit' com os dados do formulário
-  emit('submit', { email: email.value, password: password.value });
+
+const payload = {
+  nome: nome.value,
+  sobrenome: sobrenome.value,
+  email: email.value,
+  password: password.value
+  };
+  emit('submit', payload);
 };
 </script>
 
@@ -39,6 +47,16 @@ const handleSubmit = () => {
   <div class="p-8 bg-white rounded-lg shadow-md w-96">
     <h2 class="text-2xl font-bold text-center mb-6">{{ props.title }}</h2>
     <form @submit.prevent="handleSubmit" class="space-y-6">
+        <div v-if="props.isRegistering" class="flex space-x-4">
+        <div class="w-1/2">
+          <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
+          <input v-model="nome" type="text" id="nome" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />
+        </div>
+        <div class="w-1/2">
+          <label for="sobrenome" class="block text-sm font-medium text-gray-700">Sobrenome</label>
+          <input v-model="sobrenome" type="text" id="sobrenome" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />
+        </div>
+      </div>
       <div>
         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
         <input v-model="email" type="email" id="email" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />

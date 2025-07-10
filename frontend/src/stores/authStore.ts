@@ -35,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       
       // Redireciona o usuário para a página principal ou de histórico após o login
-      await router.push('/historico'); 
+      await router.push('/analise'); 
     } catch (error) {
       console.error("Falha no login:", error);
       alert("Email ou senha inválidos.");

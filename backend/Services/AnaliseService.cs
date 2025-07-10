@@ -24,87 +24,90 @@ namespace QuiosqueBI.API.Services
         }
 
         // MÉTODO PÚBLICO PRINCIPAL
-public async Task<List<ResultadoGrafico>> GerarResultadosAnaliseAsync(IFormFile arquivo, string contexto)
-{
-    // O "processador" é uma função anônima (lambda) que contém a lógica de negócio.
-    var processador = async (DadosArquivo.RDadosArquivo dadosArquivo) =>
-    {
-        var planoDeAnalise = await ObterPlanoDeAnaliseAsync(dadosArquivo.Headers, contexto);
-        var resultadosFinais = new List<ResultadoGrafico>();
-
-        if (planoDeAnalise != null)
+        public async Task<List<ResultadoGrafico>> GerarResultadosAnaliseAsync(IFormFile arquivo, string contexto, string userId)
         {
-            var recordsList = dadosArquivo.Records.ToList();
-
-            foreach (var analise in planoDeAnalise)
+            // O "processador" é uma função anônima (lambda) que contém a lógica de negócio.
+            var processador = async (DadosArquivo.RDadosArquivo dadosArquivo) =>
             {
-                if (analise.indice_dimensao < 0 || analise.indice_dimensao >= dadosArquivo.Headers.Length ||
-                    analise.indice_metrica < 0 || analise.indice_metrica >= dadosArquivo.Headers.Length)
+                var planoDeAnalise = await ObterPlanoDeAnaliseAsync(dadosArquivo.Headers, contexto);
+                var resultadosFinais = new List<ResultadoGrafico>();
+
+                if (planoDeAnalise != null)
                 {
-                    continue;
-                }
+                    var recordsList = dadosArquivo.Records.ToList();
 
-                var cabecalhoDimensaoReal = dadosArquivo.Headers[analise.indice_dimensao];
-                var cabecalhoMetricaReal = dadosArquivo.Headers[analise.indice_metrica];
-
-                var dadosAgrupados = recordsList
-                    .AsParallel()
-                    .GroupBy(rec => (object)((IDictionary<string, object>)rec)[cabecalhoDimensaoReal])
-                    .Select(g => new
+                    foreach (var analise in planoDeAnalise)
                     {
-                        Categoria = g.Key,
-                        Valor = g.Sum(rec => ConverterStringParaDecimal(Convert.ToString(((IDictionary<string, object>)rec)[cabecalhoMetricaReal])))
-                    })
-                    .ToList();
-
-                if (cabecalhoDimensaoReal.ToLower().Contains("data"))
-                {
-                    dadosAgrupados = dadosAgrupados
-                        .OrderBy(x => TentarConverterParaData(x.Categoria))
-                        .Select(x => new
+                        if (analise.indice_dimensao < 0 || analise.indice_dimensao >= dadosArquivo.Headers.Length ||
+                            analise.indice_metrica < 0 || analise.indice_metrica >= dadosArquivo.Headers.Length)
                         {
-                            Categoria = x.Categoria == null ? null :
-                                (TentarConverterParaData(x.Categoria) != DateTime.MinValue
-                                    ? (object)TentarConverterParaData(x.Categoria).ToString("yyyy-MM-dd")
-                                    : x.Categoria),
-                            Valor = x.Valor
-                        })
-                        .ToList();
-                }
-                else
-                {
-                    dadosAgrupados = dadosAgrupados.OrderByDescending(x => x.Valor).ToList();
-                }
+                            continue;
+                        }
 
-                resultadosFinais.Add(new ResultadoGrafico
-                {
-                    Titulo = analise.titulo_grafico,
-                    TipoGrafico = analise.tipo_grafico,
-                    Dados = dadosAgrupados
-                });
-            }
-            
-            // Salvar os resultados no banco de dados
-            await SalvarResultadosNoBancoAsync(resultadosFinais, contexto);
+                        var cabecalhoDimensaoReal = dadosArquivo.Headers[analise.indice_dimensao];
+                        var cabecalhoMetricaReal = dadosArquivo.Headers[analise.indice_metrica];
+
+                        var dadosAgrupados = recordsList
+                            .AsParallel()
+                            .GroupBy(rec => (object)((IDictionary<string, object>)rec)[cabecalhoDimensaoReal])
+                            .Select(g => new
+                            {
+                                Categoria = g.Key,
+                                Valor = g.Sum(rec => ConverterStringParaDecimal(Convert.ToString(((IDictionary<string, object>)rec)[cabecalhoMetricaReal])))
+                            })
+                            .ToList();
+
+                        if (cabecalhoDimensaoReal.ToLower().Contains("data"))
+                        {
+                            dadosAgrupados = dadosAgrupados
+                                .OrderBy(x => TentarConverterParaData(x.Categoria))
+                                .Select(x => new
+                                {
+                                    Categoria = x.Categoria == null ? null :
+                                        (TentarConverterParaData(x.Categoria) != DateTime.MinValue
+                                            ? (object)TentarConverterParaData(x.Categoria).ToString("yyyy-MM-dd")
+                                            : x.Categoria),
+                                    Valor = x.Valor
+                                })
+                                .ToList();
+                        }
+                        else
+                        {
+                            dadosAgrupados = dadosAgrupados.OrderByDescending(x => x.Valor).ToList();
+                        }
+
+                        resultadosFinais.Add(new ResultadoGrafico
+                        {
+                            Titulo = analise.titulo_grafico,
+                            TipoGrafico = analise.tipo_grafico,
+                            Dados = dadosAgrupados
+                        });
+                    }
+
+                    // Salvar os resultados no banco de dados
+                    await SalvarResultadosNoBancoAsync(resultadosFinais, contexto, userId);
+                }
+                return resultadosFinais;
+            };
+
+            return await ProcessarArquivoStreamAsync(arquivo, processador);
         }
-        return resultadosFinais;
-    };
 
-    return await ProcessarArquivoStreamAsync(arquivo, processador);
-}
-
-// Método auxiliar para salvar resultados no banco
-private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultados, string contexto)
-{
-    var analiseSalva = new AnaliseSalva
-    {
-        Contexto = contexto,
-        DataCriacao = DateTime.UtcNow,
-        ResultadosJson = JsonSerializer.Serialize(resultados)
-    };
-    
-    await SalvarAnalise(analiseSalva);
-}
+        // Método auxiliar para salvar resultados no banco
+        private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultados, string contexto, string userId)
+        {
+            if (resultados.Any())
+            {
+                var analiseSalva = new AnaliseSalva
+                {
+                    Contexto = contexto,
+                    DataCriacao = DateTime.UtcNow,
+                    ResultadosJson = JsonSerializer.Serialize(resultados),
+                    UserId = userId
+                };
+                await SalvarAnalise(analiseSalva);
+            }
+        }
 
         // MÉTODO PÚBLICO DE DEBUG
         public async Task<DebugData> GerarDadosDebugAsync(IFormFile arquivo, string contexto)
@@ -119,7 +122,7 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
                     PlanoDaIA = planoDeAnalise
                 };
             };
-            
+
             return await ProcessarArquivoStreamAsync(arquivo, processador);
         }
 
@@ -139,7 +142,7 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
 
                 // O bloco 'using' garante que o leitor permanecerá aberto durante o processamento
                 using var reader = ExcelReaderFactory.CreateReader(stream);
-                
+
                 reader.Read(); // Lê a primeira linha para obter os cabeçalhos
                 var headerList = new List<string>();
                 for (int i = 0; i < reader.FieldCount; i++)
@@ -180,6 +183,7 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
                 return await processador(new DadosArquivo.RDadosArquivo(headers, records));
             }
         }
+
         private IEnumerable<dynamic> LerLinhasExcel(IExcelDataReader reader, string[] headers)
         {
             while (reader.Read())
@@ -192,18 +196,18 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
                 yield return expando; // Retorna uma linha de cada vez (streaming)
             }
         }
-        
+
         // ... (Seus outros métodos privados: ObterPlanoDeAnaliseAsync, ConverterStringParaDecimal, TentarConverterParaData)
         // Eles permanecem os mesmos.
         private async Task<List<AnaliseSugerida>?> ObterPlanoDeAnaliseAsync(string[] headers, string contexto)
         {
             var apiKey = _configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Chave da API do Gemini não configurada.");
-            
+
             var googleAi = new GoogleAI(apiKey);
             var model = googleAi.GenerativeModel(Model.Gemini25Flash);
 
             var colunasComIndices = string.Join(", ", headers.Select((h, i) => $"'{i}': '{h}'"));
-            
+
             var promptText = $$"""
                                Sua tarefa é agir como um motor de análise de dados. Você receberá um objetivo e uma lista de colunas com seus respectivos índices numéricos. Sua resposta DEVE usar os índices.
                                O objetivo da análise do usuário é: '{{contexto}}'.
@@ -214,7 +218,7 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
                                  { "titulo_grafico": "...", "tipo_grafico": "barras|linha|pizza", "indice_dimensao": <numero>, "indice_metrica": <numero> }
                                ]
                                """;
-            
+
             var response = await model.GenerateContent(promptText);
             var responseText = response?.Text?.Trim() ?? string.Empty;
 
@@ -229,9 +233,9 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
         private decimal ConverterStringParaDecimal(string? stringValue)
         {
             if (string.IsNullOrEmpty(stringValue)) return 0m;
-            
+
             string cleanString = stringValue.Replace("R$", "").Trim().Replace(",", ".");
-            
+
             if (decimal.TryParse(cleanString, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal parsedValue))
             {
                 return parsedValue;
@@ -247,10 +251,14 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
             }
             return DateTime.MinValue;
         }
-        
-        public async Task<List<AnaliseSalva>> ListarAnalisesSalvasAsync()
+
+        public async Task<List<AnaliseSalva>> ListarAnalisesSalvasAsync(string userId)
         {
-            return await _context.AnalisesSalvas.ToListAsync();
+            // Adiciona a cláusula .Where() para filtrar apenas as análises do usuário logado
+            return await _context.AnalisesSalvas
+                .Where(a => a.UserId == userId)
+                .OrderByDescending(a => a.DataCriacao)
+                .ToListAsync();
         }
 
         public async Task SalvarAnalise(AnaliseSalva analise)
@@ -258,11 +266,12 @@ private async Task SalvarResultadosNoBancoAsync(List<ResultadoGrafico> resultado
             _context.AnalisesSalvas.Add(analise);
             await _context.SaveChangesAsync();
         }
-        
-        public async Task<AnaliseSalva?> ObterAnaliseSalvaPorIdAsync(int id)
+
+        public async Task<AnaliseSalva?> ObterAnaliseSalvaPorIdAsync(int id, string userId)
         {
-            // FindAsync é a forma mais otimizada de buscar uma entidade pela sua chave primária.
-            return await _context.AnalisesSalvas.FindAsync(id);
+            // Busca pelo Id da análise E verifica se o UserId corresponde ao do usuário logado
+            return await _context.AnalisesSalvas
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
         }
     }
 }

@@ -1,4 +1,16 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
+import { storeToRefs } from 'pinia';
+
+
+const authStore = useAuthStore();
+const { isAuthenticated } = storeToRefs(authStore);
+
+// Função para lidar com o logout
+const handleLogout = () => {
+  authStore.logout();
+};
 </script>
 
 <template>
@@ -11,15 +23,35 @@
                         <span class="text-xl font-bold text-white">QuiosqueBI</span>
                     </RouterLink>
                 </div>
-                <div class="flex items-center">
+                <div class="flex items-center space-x-4">
+                    
+                    <template v-if="isAuthenticated">
+                        <RouterLink to="/historico"
+                            class="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-200">
+                            Histórico
+                        </RouterLink>
+                        <button @click="handleLogout"
+                            class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                            Logout
+                        </button>
+                    </template>
+                    
+                    <template v-else>
+                        <RouterLink to="/login"
+                            class="px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-200">
+                            Login
+                        </RouterLink>
+                        <RouterLink to="/register"
+                            class="bg-white text-blue-600 hover:bg-gray-200 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                            Registrar
+                        </RouterLink>
+                    </template>
+
                     <RouterLink to="/debug"
-                        class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
-                        Painel de Depuração
+                        class="bg-gray-700 hover:bg-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                        Debug
                     </RouterLink>
-                    <RouterLink to="/historico"
-                        class="ml-4 bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
-                        Histórico de Análises
-                    </RouterLink>
+
                 </div>
             </div>
         </div>
@@ -30,11 +62,5 @@
 /* Garantir que a imagem não quebre o layout em diferentes tamanhos */
 img {
     max-height: 56px;
-    max-width: 200px;
-}
-
-/* Adicionar espaçamento entre imagem e texto */
-.flex.items-center img {
-    margin-right: 12px;
 }
 </style>

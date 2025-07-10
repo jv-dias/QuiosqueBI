@@ -1,4 +1,3 @@
-// DENTRO DE src/main.ts - CORRIGIDO
 import './assets/main.css'
 
 import { createApp } from 'vue'

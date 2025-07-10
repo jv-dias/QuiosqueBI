@@ -1,75 +1,93 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import axios from 'axios';
-import router from '@/router'; // Importamos o router para poder redirecionar
+import router from '@/router';
+import { jwtDecode } from 'jwt-decode'; // Importe a biblioteca
 
-// Define a interface para os dados que os formulários enviam
 interface AuthPayload {
   email: string;
   password: string;
 }
 
-// URL base da sua API. É uma boa prática defini-la em um só lugar.
+// Interface para o conteúdo que esperamos do token decodificado
+interface DecodedToken {
+  // A chave do token não é 'name', mas sim o nome completo do schema da claim.
+  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name": string;
+  
+  // O mesmo para o email, para sermos consistentes
+  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": string;
+}
+
 const API_URL = 'http://localhost:5159/api/auth';
 
 export const useAuthStore = defineStore('auth', () => {
-  // Tenta pegar o token do localStorage ao iniciar. Se não existir, começa como nulo.
   const token = ref(localStorage.getItem('token') || null);
+  const user = ref<DecodedToken | null>(null);
 
-  // Configura o cabeçalho de autorização do axios com o token inicial (se existir)
-  if (token.value) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
+  function updateUserState(newToken: string | null) {
+    token.value = newToken;
+    if (newToken) {
+      localStorage.setItem('token', newToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      try {
+        user.value = jwtDecode(newToken);
+      } catch (error) {
+        console.error("Erro ao decodificar o token:", error);
+        user.value = null;
+      }
+    } else {
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
+      user.value = null;
+    }
   }
 
-  // Uma propriedade computada que nos diz reativamente se o usuário está logado.
-  const isAuthenticated = computed(() => !!token.value);
+  // Inicializa o estado quando a store é criada
+  updateUserState(token.value);
 
-  // Ação para fazer o login
+  const isAuthenticated = computed(() => !!token.value);
+  
+  const userFirstName = computed(() => {
+    // Acessa a propriedade usando a chave correta e completa
+    const fullName = user.value?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+    if (fullName) {
+      return fullName.split('-')[0];
+    }
+    return '';
+  });
+
   async function login(payload: AuthPayload) {
     try {
       const response = await axios.post(`${API_URL}/login`, payload);
-      
-      const newToken = response.data.token;
-      token.value = newToken;
-      localStorage.setItem('token', newToken); // Salva o token para persistir entre sessões
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
-      // Redireciona o usuário para a página principal ou de histórico após o login
-      await router.push('/analise'); 
+      updateUserState(response.data.token);
+      await router.push('/historico');
     } catch (error) {
       console.error("Falha no login:", error);
       alert("Email ou senha inválidos.");
     }
   }
 
-  // Ação para fazer o logout
   function logout() {
-    token.value = null;
-    localStorage.removeItem('token'); // Remove o token do armazenamento
-    delete axios.defaults.headers.common['Authorization'];
-    
-    // Redireciona para a página de login para que o usuário não fique em uma página protegida
+    updateUserState(null);
     router.push('/login');
   }
 
-  // Ação para registrar um novo usuário
-  async function registrar(payload: AuthPayload) {
+  async function registrar(payload: any) {
      try {
         await axios.post(`${API_URL}/register`, payload);
         alert("Usuário registrado com sucesso! Por favor, faça o login.");
         await router.push('/login');
      } catch(error) {
         console.error("Falha no registro:", error);
-        alert("Falha no registro. O usuário pode já existir ou a senha é muito fraca.");
+        alert("Falha no registro. Verifique os dados e tente novamente.");
      }
   }
 
-  // Expõe os estados e as ações para que os componentes possam usá-los
-  return { 
-    token, 
-    isAuthenticated, 
-    login, 
-    logout, 
-    registrar 
+  return {
+    isAuthenticated,
+    userFirstName, // Expomos o primeiro nome para a Navbar
+    login,
+    logout,
+    registrar
   };
 });

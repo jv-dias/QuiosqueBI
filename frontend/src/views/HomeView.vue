@@ -73,7 +73,7 @@ const { isAuthenticated } = storeToRefs(authStore);
             "O QuiosqueBI economizou horas de trabalho manual no Excel. O que levava uma tarde inteira para ser feito, agora leva segundos. Simplesmente incrível."
           </p>
           <footer class="mt-8">
-            <p class="text-base font-bold text-blue-600">Vera, mãe do criador do projeto. (FONTE 100% CONFIÁVEL)</p>
+            <p class="text-base font-bold text-blue-600">Mãe do criador do projeto. (FONTE 100% CONFIÁVEL)</p>
           </footer>
         </div>
       </div>

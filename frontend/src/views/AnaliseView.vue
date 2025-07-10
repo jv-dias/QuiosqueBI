@@ -27,7 +27,7 @@ function mapChartType(tipoApi: string): string {
       <div class="bg-white shadow-sm">
         <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <h1 class="text-3xl font-bold leading-tight text-gray-900">Painel de Análise</h1>
-          <p class="mt-1 text-sm text-gray-500">Bem-vindo, {{ nomeUsuario }}. Envie um arquivo para começar a gerar insights.</p>
+          <p class="mt-1 text-sm text-gray-500">Envie um arquivo para começar a gerar insights.</p>
         </div>
       </div>
 

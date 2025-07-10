@@ -3,12 +3,14 @@ import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import { storeToRefs } from 'pinia';
 import Footer from '@/components/Footer.vue';
+import NavBar from '@/components/NavBar.vue';
 
 const authStore = useAuthStore();
 const { isAuthenticated } = storeToRefs(authStore);
 </script>
 
 <template>
+  <NavBar />
   <div class="bg-white">
     <main>
         <div class="relative bg-gray-900">

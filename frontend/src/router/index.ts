@@ -40,19 +40,23 @@ const router = createRouter({
   ]
 });
 
-// 3. IMPLEMENTAÇÃO DO NAVIGATION GUARD (O "PORTEIRO")
+// Navigation Guard
 router.beforeEach((to, from, next) => {
-  // Inicializamos a store para poder usá-la aqui
   const authStore = useAuthStore();
-  
+  const isAuthenticated = authStore.isAuthenticated;
+
+  const authRoutes = ['login', 'register'];
+
   // Verifica se a rota para a qual o usuário está indo (o 'to') exige autenticação
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // Se a rota exige autenticação E o usuário não está logado...
-    // ...redireciona para a página de login.
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    // Se a rota exige login e o usuário NÃO está logado, vai para o login.
     next({ name: 'login' });
+  } else if (authRoutes.includes(to.name as string) && isAuthenticated) {
+    // Se a rota é de login/registro E o usuário JÁ ESTÁ logado...
+    // ...redireciona para a página inicial (ou para o histórico).
+    next({ name: 'home' }); 
   } else {
-    // Caso contrário (se a rota for pública ou se o usuário estiver logado),
-    // permite que a navegação continue normalmente.
+    // Em todos os outros casos, permite a navegação.
     next();
   }
 });

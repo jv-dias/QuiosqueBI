@@ -36,6 +36,12 @@ const router = createRouter({
       path: '/register',
       name: 'register',
       component: () => import('../views/RegisterView.vue')
+    },
+    {
+      path: '/analise',
+      name: 'analise',
+      component: () => import('../views/AnaliseView.vue'),
+      meta: { requiresAuth: true }
     }    
   ]
 });

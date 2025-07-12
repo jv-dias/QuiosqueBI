@@ -18,7 +18,10 @@ interface DecodedToken {
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": string;
 }
 
-const API_URL = 'https://localhost:7169/api/auth';
+// --- AQUI ESTÁ A CORREÇÃO PRINCIPAL ---
+// 1. Define a URL base da API usando a variável de ambiente do Vite.
+// 2. Se a variável não existir (no ambiente local), ele usa o endereço de desenvolvimento.
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7169/api';
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || null);
@@ -58,7 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(payload: AuthPayload) {
     try {
-      const response = await axios.post(`${API_URL}/login`, payload);
+      const response = await axios.post(`${API_BASE_URL}/login`, payload);
       updateUserState(response.data.token);
       await router.push('/historico');
     } catch (error) {
@@ -74,7 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function registrar(payload: any) {
      try {
-        await axios.post(`${API_URL}/register`, payload);
+        await axios.post(`${API_BASE_URL}/register`, payload);
         alert("Usuário registrado com sucesso! Por favor, faça o login.");
         await router.push('/login');
      } catch(error) {
@@ -85,7 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     isAuthenticated,
-    userFirstName, // Expomos o primeiro nome para a Navbar
+    userFirstName, 
     login,
     logout,
     registrar

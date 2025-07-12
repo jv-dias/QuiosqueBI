@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/00c4c10e-876a-4071-8681-8ae70863585a/resourceGroups/QuiosqueBI_group/providers/Microsoft.Web/sites/quiosquebi-api",
+    "appService.deploySubpath": "backend"
+}

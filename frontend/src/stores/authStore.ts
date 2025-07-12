@@ -18,7 +18,7 @@ interface DecodedToken {
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": string;
 }
 
-const API_URL = 'http://localhost:5159/api/auth';
+const API_URL = 'https://localhost:7169/api/auth';
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || null);

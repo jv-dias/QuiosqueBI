@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "author": "João Victor da Silva Dias", 
+  "author": "João Victor da Silva Dias",
   "engines": {
-    "node": ">=20.0.0"},
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^22.15.32",
+    "@vitejs/plugin-basic-ssl": "^2.1.0",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vitejs/plugin-vue-jsx": "^5.0.0",
     "@vue/eslint-config-prettier": "^10.2.0",

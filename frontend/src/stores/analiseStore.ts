@@ -54,7 +54,7 @@ export const useAnaliseStore = defineStore('analise', () => {
     // ===================================================================
 
     try {
-      const urlDaApi = 'http://localhost:5159/api/analise/upload';
+      const urlDaApi = 'https://localhost:7169/api/analise/upload';
 
       const response = await axios.post<any>(urlDaApi, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -80,7 +80,7 @@ export const useAnaliseStore = defineStore('analise', () => {
     debugInfo.value = null; // Limpa informações de depuração antigas
 
     try {
-      const urlDaApiDebug = 'http://localhost:5159/api/analise/debug'; 
+      const urlDaApiDebug = 'https://localhost:7169/api/analise/debug'; 
 
       const response = await axios.post<DebugInfo>(urlDaApiDebug, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -104,7 +104,7 @@ async function buscarHistorico() {
   carregando.value = true;
   erro.value = null;
   try {
-    const urlDaApi = 'http://localhost:5159/api/analise/historico';
+    const urlDaApi = 'https://localhost:7169/api/analise/historico';
     const response = await axios.get(urlDaApi);
     historico.value = response.data;
   } catch (e: any) {

@@ -95,12 +95,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function clearError() {
+    error.value = null;
+  }
+
   return {
     isAuthenticated,
     userFirstName,
     error,
     login,
     logout,
-    registrar
+    registrar,
+    clearError
   };
 });

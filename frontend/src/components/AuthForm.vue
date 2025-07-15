@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '@/stores/authStore';
+import { RouterLink } from 'vue-router';
 
 // 1. Definimos as 'props' que o componente pode receber de fora
 const props = defineProps({
@@ -39,6 +40,12 @@ watch(() => authStore.error, (newError) => {
   }
 });
 
+// Computed para verificar se a mensagem contém texto sobre email duplicado
+const isEmailDuplicateError = computed(() => {
+  const errorMessage = formError.value || authStore.error || '';
+  return errorMessage.includes('Este email já está cadastrado');
+});
+
 // Validação básica de email
 const isEmailValid = computed(() => {
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,8 +66,8 @@ const doPasswordsMatch = computed(() => {
 const isFormValid = computed(() => {
   if (props.isRegistering) {
     return nome.value && sobrenome.value && email.value && isEmailValid.value &&
-           password.value && isPasswordStrong.value &&
-           confirmPassword.value && doPasswordsMatch.value;
+      password.value && isPasswordStrong.value &&
+      confirmPassword.value && doPasswordsMatch.value;
   } else {
     return email.value && isEmailValid.value && password.value;
   }
@@ -104,66 +111,70 @@ function submitForm() {
 
     <!-- Exibição de erro -->
     <div v-if="formError || authStore.error" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-      {{ formError || authStore.error }}
+      <template v-if="isEmailDuplicateError">
+        Este email já está cadastrado. Por favor, tente outro email ou faça
+        <RouterLink to="/login" class="font-medium text-blue-600 hover:text-blue-500 underline">
+          login
+        </RouterLink>.
+      </template>
+      <template v-else>
+        {{ formError || authStore.error }}
+      </template>
     </div>
 
     <form @submit.prevent="submitForm" class="space-y-6">
-        <!-- Campos de Registro -->
-        <template v-if="isRegistering">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
-              <input type="text" id="nome" v-model="nome" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label for="sobrenome" class="block text-sm font-medium text-gray-700">Sobrenome</label>
-              <input type="text" id="sobrenome" v-model="sobrenome" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
+      <!-- Campos de Registro -->
+      <template v-if="isRegistering">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
+            <input type="text" id="nome" v-model="nome" required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
           </div>
-        </template>
-
-        <!-- Email -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-          <input type="email" id="email" v-model="email" required
-            :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
-                    isEmailValid ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']"
-          />
-          <p v-if="!isEmailValid && email" class="mt-1 text-sm text-red-600">Por favor, informe um email válido.</p>
+          <div>
+            <label for="sobrenome" class="block text-sm font-medium text-gray-700">Sobrenome</label>
+            <input type="text" id="sobrenome" v-model="sobrenome" required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+          </div>
         </div>
+      </template>
 
-        <!-- Senha -->
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
-          <input type="password" id="password" v-model="password" required
-            :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
-                    isPasswordStrong ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']"
-          />
-          <p v-if="!isPasswordStrong && password" class="mt-1 text-sm text-red-600">A senha deve ter pelo menos 6 caracteres.</p>
-        </div>
+      <!-- Email -->
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" id="email" v-model="email" required
+          :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
+            isEmailValid ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']" />
+        <p v-if="!isEmailValid && email" class="mt-1 text-sm text-red-600">Por favor, informe um email válido.</p>
+      </div>
 
-        <!-- Confirmação de Senha para Registro -->
-        <div v-if="isRegistering">
-          <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirme a Senha</label>
-          <input type="password" id="confirmPassword" v-model="confirmPassword" required
-            :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
-                    doPasswordsMatch ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']"
-          />
-          <p v-if="!doPasswordsMatch && confirmPassword" class="mt-1 text-sm text-red-600">As senhas não conferem.</p>
-        </div>
+      <!-- Senha -->
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+        <input type="password" id="password" v-model="password" required
+          :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
+            isPasswordStrong ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']" />
+        <p v-if="!isPasswordStrong && password" class="mt-1 text-sm text-red-600">A senha deve ter pelo menos 6
+          caracteres.
+        </p>
+      </div>
 
-        <div>
-          <button type="submit"
-            :disabled="!isFormValid"
-            :class="['w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none',
-                    isFormValid ? 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500' : 'bg-blue-300 cursor-not-allowed']">
-            {{ props.buttonText }}
-          </button>
-        </div>
+      <!-- Confirmação de Senha para Registro -->
+      <div v-if="isRegistering">
+        <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirme a Senha</label>
+        <input type="password" id="confirmPassword" v-model="confirmPassword" required
+          :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
+            doPasswordsMatch ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']" />
+        <p v-if="!doPasswordsMatch && confirmPassword" class="mt-1 text-sm text-red-600">As senhas não conferem.</p>
+      </div>
+
+      <div>
+        <button type="submit" :disabled="!isFormValid"
+          :class="['w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none',
+            isFormValid ? 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500' : 'bg-blue-300 cursor-not-allowed']">
+          {{ props.buttonText }}
+        </button>
+      </div>
     </form>
   </div>
 </template>

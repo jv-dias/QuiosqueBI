@@ -2,28 +2,25 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import axios from 'axios';
 import router from '@/router';
-import { jwtDecode } from 'jwt-decode'; // Importe a biblioteca
+import { jwtDecode } from 'jwt-decode';
 
 interface AuthPayload {
   email: string;
   password: string;
 }
 
-// Interface para o conteúdo que esperamos do token decodificado
 interface DecodedToken {
-  // A chave do token não é 'name', mas sim o nome completo do schema da claim.
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name": string;
-
-  // O mesmo para o email, para sermos consistentes
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": string;
 }
 
-// Use a porta 7169 que está mapeada para o container
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7169/api';
+// Usar a URL completa com https para evitar problemas
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://quiosquebi-api.azurewebsites.net/api';
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || null);
   const user = ref<DecodedToken | null>(null);
+  const error = ref<string | null>(null);
 
   function updateUserState(newToken: string | null) {
     token.value = newToken;
@@ -58,13 +55,15 @@ export const useAuthStore = defineStore('auth', () => {
   });
 
   async function login(payload: AuthPayload) {
+    error.value = null;
     try {
+      console.log(`Tentando login em: ${API_BASE_URL}/auth/login`);
       const response = await axios.post(`${API_BASE_URL}/auth/login`, payload);
       updateUserState(response.data.token);
       await router.push('/historico');
-    } catch (error) {
-      console.error("Falha no login:", error);
-      alert("Email ou senha inválidos.");
+    } catch (e: any) {
+      console.error("Falha no login:", e);
+      error.value = e.message || "Erro desconhecido durante login";
     }
   }
 
@@ -74,20 +73,26 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function registrar(payload: any) {
-     try {
-        // CORREÇÃO: Adicionar '/auth' à URL de registro
-        await axios.post(`${API_BASE_URL}/auth/register`, payload);
-        alert("Usuário registrado com sucesso! Por favor, faça o login.");
-        await router.push('/login');
-     } catch(error) {
-        console.error("Falha no registro:", error);
-        alert("Falha no registro. Verifique os dados e tente novamente.");
-     }
+    error.value = null;
+    try {
+      console.log(`Tentando registrar em: ${API_BASE_URL}/auth/register`);
+      await axios.post(`${API_BASE_URL}/auth/register`, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      alert("Usuário registrado com sucesso! Por favor, faça o login.");
+      await router.push('/login');
+    } catch (e: any) {
+      console.error("Falha no registro:", e);
+      error.value = e.message || "Erro desconhecido durante o registro";
+    }
   }
 
   return {
     isAuthenticated,
     userFirstName,
+    error,
     login,
     logout,
     registrar

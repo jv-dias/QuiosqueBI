@@ -26,8 +26,8 @@ export interface DebugInfo {
     planoDaIA: AnaliseSugeridaDebug[];
 }
 
-// Use a porta 7169 que está mapeada para o container
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7169/api';
+// Usar a URL completa com https para evitar problemas
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://quiosquebi-api.azurewebsites.net/api';
 
 export const useAnaliseStore = defineStore('analise', () => {
   const resultados = ref<ResultadoGrafico[]>([])

@@ -26,8 +26,8 @@ export interface DebugInfo {
     planoDaIA: AnaliseSugeridaDebug[];
 }
 
-// Usar a URL completa com https para evitar problemas
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://quiosquebi-api.azurewebsites.net/api';
+// Usar a variável de ambiente VITE_API_URL definida no arquivo .env correspondente ao ambiente
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const useAnaliseStore = defineStore('analise', () => {
   const resultados = ref<ResultadoGrafico[]>([])

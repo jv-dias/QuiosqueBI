@@ -85,7 +85,13 @@ export const useAuthStore = defineStore('auth', () => {
       await router.push('/login');
     } catch (e: any) {
       console.error("Falha no registro:", e);
-      error.value = e.message || "Erro desconhecido durante o registro";
+
+      // Verificar especificamente o erro de email duplicado
+      if (e.response && e.response.status === 409) {
+        error.value = "Este email já está cadastrado. Por favor, tente outro email ou faça login.";
+      } else {
+        error.value = e.response?.data?.message || e.message || "Erro desconhecido durante o registro";
+      }
     }
   }
 

@@ -4,8 +4,14 @@ import { useAuthStore } from '@/stores/authStore';
 import NavBar from '@/components/NavBar.vue';
 import Footer from '@/components/Footer.vue';
 import { RouterLink } from 'vue-router';
+import { onMounted } from 'vue';
 
 const authStore = useAuthStore();
+
+// Limpa qualquer erro anterior ao montar o componente
+onMounted(() => {
+  authStore.error = null;
+});
 </script>
 
 <template>
@@ -14,7 +20,7 @@ const authStore = useAuthStore();
 
     <main class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div class="max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden md:flex">
-        
+
         <div class="w-full md:w-1/2 p-8 sm:p-12 bg-blue-600 text-white flex flex-col justify-center">
           <h2 class="text-3xl font-extrabold mb-4">Crie sua Conta Gratuita</h2>
           <p class="mb-8 text-blue-100">Junte-se ao QuiosqueBI e comece a transformar seus dados em decisões inteligentes. Ao se registrar, você terá acesso a:</p>
@@ -33,16 +39,16 @@ const authStore = useAuthStore();
             </li>
           </ul>
         </div>
-        
+
         <div class="w-full md:w-1/2 p-8 sm:p-12 flex flex-col justify-center">
-          <AuthForm 
+          <AuthForm
             title="Complete seus dados"
             button-text="Criar minha conta"
             :is-registering="true"
             @submit="authStore.registrar"
           />
           <p class="mt-6 text-center text-sm text-gray-500">
-            Já tem uma conta? 
+            Já tem uma conta?
             <RouterLink to="/login" class="font-medium text-blue-600 hover:text-blue-500">
               Faça o login aqui
             </RouterLink>
@@ -51,7 +57,7 @@ const authStore = useAuthStore();
 
       </div>
     </main>
-    
+
     <Footer />
   </div>
 </template>

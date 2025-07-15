@@ -13,15 +13,13 @@ interface AuthPayload {
 interface DecodedToken {
   // A chave do token não é 'name', mas sim o nome completo do schema da claim.
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name": string;
-  
+
   // O mesmo para o email, para sermos consistentes
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": string;
 }
 
-// --- AQUI ESTÁ A CORREÇÃO PRINCIPAL ---
-// 1. Define a URL base da API usando a variável de ambiente do Vite.
-// 2. Se a variável não existir (no ambiente local), ele usa o endereço de desenvolvimento.
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7169/api';
+// Use a porta 7169 que está mapeada para o container
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7169/api';
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || null);
@@ -49,7 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
   updateUserState(token.value);
 
   const isAuthenticated = computed(() => !!token.value);
-  
+
   const userFirstName = computed(() => {
     // Acessa a propriedade usando a chave correta e completa
     const fullName = user.value?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
@@ -61,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(payload: AuthPayload) {
     try {
-      const response = await axios.post(`${API_BASE_URL}/login`, payload);
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, payload);
       updateUserState(response.data.token);
       await router.push('/historico');
     } catch (error) {
@@ -77,7 +75,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function registrar(payload: any) {
      try {
-        await axios.post(`${API_BASE_URL}/register`, payload);
+        // CORREÇÃO: Adicionar '/auth' à URL de registro
+        await axios.post(`${API_BASE_URL}/auth/register`, payload);
         alert("Usuário registrado com sucesso! Por favor, faça o login.");
         await router.push('/login');
      } catch(error) {
@@ -88,7 +87,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     isAuthenticated,
-    userFirstName, 
+    userFirstName,
     login,
     logout,
     registrar

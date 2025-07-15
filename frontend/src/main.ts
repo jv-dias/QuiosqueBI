@@ -1,25 +1,21 @@
-// DENTRO DE src/main.ts
-
 import './assets/main.css'
-
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-
 import ECharts from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart, LineChart, PieChart, FunnelChart } from 'echarts/charts'
 
-// 1. Importe o DataZoomComponent junto com os outros
+// Import do DataZoomComponent junto com os outros
 import { 
   GridComponent, 
   TooltipComponent, 
   TitleComponent, 
   LegendComponent, 
-  DataZoomComponent // <-- ADICIONE A VÍRGULA E O NOVO COMPONENTE AQUI
+  DataZoomComponent 
 } from 'echarts/components'
 
-// 2. Registra os componentes da ECharts que vamos usar
+// Registro dos componentes do ECharts
 use([
   CanvasRenderer,
   BarChart,

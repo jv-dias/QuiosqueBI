@@ -1,137 +1,82 @@
-# QuiosqueBI - Análise de Dados com IA
+# QuiosqueBI - Frontend (Vue.js 3)
 
-**⚠️ Importante:** Este é um projeto de **portfólio** criado para demonstrar habilidades em desenvolvimento Full-Stack com .NET e Vue.js, integração com APIs de Inteligência Artificial e implementação de sistemas de autenticação seguros.
+![Vue.js](https://img.shields.io/badge/vuejs-%2335495e.svg?style=for-the-badge&logo=vuedotjs&logoColor=%234FC08D)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![Pinia](https://img.shields.io/badge/pinia-%23FFB217.svg?style=for-the-badge&logo=vue.js&logoColor=white)
+![ECharts](https://img.shields.io/badge/echarts-AA3435?style=for-the-badge&logo=apacheecharts&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white)
 
-O QuiosqueBI é uma aplicação web completa onde usuários podem se registrar, fazer o upload de arquivos de dados (CSV/XLSX), gerar análises visuais através de comandos em linguagem natural, e salvar ou revisitar seu histórico pessoal de forma segura.
+Este repositório contém a interface de usuário (UI) para a aplicação **QuiosqueBI**. É uma Single Page Application (SPA) moderna, reativa e responsiva, construída com **Vue.js 3** e **TypeScript**, projetada para oferecer uma experiência de usuário fluida e intuitiva desde o registro até a visualização de análises complexas.
 
----
-
-## Conceito Principal: O Fluxo de Análise
-
-O projeto combina uma arquitetura robusta com Inteligência Artificial para entregar uma experiência de usuário fluida e poderosa.
-
-1.  **Registro e Login:** O usuário cria uma conta segura. O sistema utiliza **ASP.NET Core Identity** para gerenciamento de usuários e **Tokens JWT** para autenticação, garantindo que cada sessão seja validada.
-2.  **Upload e Contexto:** Uma vez logado, o usuário envia um arquivo de dados e descreve seu objetivo de análise.
-3.  **Inteligência Artificial em Ação:** O backend em .NET envia os metadados do arquivo e o objetivo do usuário para a **API do Google Gemini**.
-4.  **Processamento e Visualização:** A IA retorna um plano de análise, que o backend executa para processar os dados e gerar os resultados visuais, que são então exibidos no frontend em Vue.js.
-5.  **Persistência e Histórico:** Os resultados da análise são associados ao usuário logado e salvos em um banco de dados **PostgreSQL**. O usuário pode revisitar suas análises a qualquer momento através de sua página de histórico pessoal e segura.
-
----
-
-## 🚀 Stack de Tecnologias
-
-* **Backend:** API RESTful com **.NET 8**, **Entity Framework Core**, **ASP.NET Core Identity**.
-* **Banco de Dados:** **PostgreSQL**.
-* **Frontend:** Single Page Application (SPA) com **Vue 3** (Composition API) + Vite.
-* **Inteligência Artificial:** Google Gemini API.
-* **Autenticação:** Tokens **JWT (JSON Web Tokens)**.
-* **Estilização:** Tailwind CSS.
-* **Linguagens:** C#, TypeScript.
+<div align="center">
+  <a href="https://victorious-dune-05e42d21e.1.azurestaticapps.net" target="_blank">
+    <img src="https://img.shields.io/badge/Ver_Aplicação_no_Ar-0078D4?style=for-the-badge&logo=azure-static-web-apps&logoColor=white" alt="Link para a aplicação" />
+  </a>
+</div>
 
 ---
 
-## 📋 Pré-requisitos
-
-* [.NET 8.0 SDK](https://dotnet.microsoft.com/download)
-* [Node.js](https://nodejs.org/) (v18 ou superior)
-* [PostgreSQL](https://www.postgresql.org/download/) com um banco de dados criado (ex: `QuiosqueBI_DB`).
-
----
-
-## ⚙️ Configuração Essencial
-
-Para a aplicação funcionar corretamente, você precisa configurar as chaves da API, a conexão com o banco e o segredo do JWT.
-
-1.  Navegue até a pasta do backend: `cd backend`
-2.  Crie um arquivo chamado `appsettings.Development.json`.
-3.  Adicione as configurações abaixo, substituindo os valores de exemplo:
-
-    ```json
-    {
-      "Logging": {
-        "LogLevel": {
-          "Default": "Information",
-          "Microsoft.AspNetCore": "Warning"
-        }
-      },
-      "ConnectionStrings": {
-        "DefaultConnection": "Server=localhost;Port=5432;Database=QuiosqueBI_DB;User Id=postgres;Password=SUA_SENHA_DO_POSTGRES;"
-      },
-      "Gemini": {
-        "ApiKey": "SUA_CHAVE_API_DO_GEMINI_VAI_AQUI"
-      },
-      "Jwt": {
-        "SecretKey": "SUA_CHAVE_SECRETA_SUPER_LONGA_E_SEGURA_COM_MAIS_DE_256_BITS",
-        "Issuer": "https://localhost:5001",
-        "Audience": "https://localhost:5001"
-      }
-    }
-    ```
-
----
-
-## ⚡ Como Rodar o Projeto
-
-Você precisará de dois terminais abertos, um para o backend e um para o frontend.
-
-### Backend (.NET API)
-
-1.  **Navegue até a pasta:**
-    ```sh
-    cd backend
-    ```
-2.  **Restaure os pacotes do .NET:**
-    ```sh
-    dotnet restore
-    ```
-3.  **Execute as Migrations do Banco de Dados:** Este comando criará todas as tabelas, incluindo as do sistema de identidade.
-    ```sh
-    dotnet ef database update
-    ```
-4.  **Execute a API:**
-    ```sh
-    dotnet run
-    ```
-
-### Frontend (Vue.js App)
-
-1.  **Navegue até a pasta:**
-    ```sh
-    cd frontend
-    ```
-2.  **Instale as dependências:**
-    ```sh
-    npm install
-    ```
-3.  **Execute o servidor de desenvolvimento:**
-    ```sh
-    npm run dev
-    ```
-4.  Acesse a aplicação no seu navegador em `http://localhost:5173`.
+> ### ⚙️ **Backend API (.NET)**
+> Toda a lógica de negócio, integração com IA e gerenciamento de banco de dados é feita por uma API .NET que está em um repositório separado.
+> **[Acesse o repositório do Backend aqui](https://github.com/jv-dias/QuiosqueBI-Backend)**
 
 ---
 
 ## ✨ Funcionalidades Principais
 
-* **Autenticação e Autorização Completas:** Sistema de registro e login seguro com **ASP.NET Core Identity** e **JWT**. Cada usuário só pode acessar seus próprios dados.
-* **Análise via IA Generativa:** Utiliza a API do Google Gemini para interpretar comandos em linguagem natural e gerar planos de análise dinâmicos.
-* **Persistência de Dados com Histórico Pessoal:** Salva os resultados de cada análise em um banco de dados PostgreSQL e permite que o usuário visualize seu histórico de forma segura.
-* **Otimização para Arquivos Grandes:** Suporta `.csv` e `.xlsx` e utiliza técnicas de **streaming** para analisar arquivos com mais de 20.000 linhas com baixo consumo de memória.
-* **Interface Reativa e Moderna:** Frontend construído com Vue 3, TypeScript e Pinia, com uma UI elegante e responsiva que se adapta ao estado de autenticação do usuário.
+* **Interface Reativa e Moderna:** Construída com Vue 3 (Composition API) e estilizada com Tailwind CSS para um design limpo e totalmente responsivo.
+* **Sistema de Autenticação Completo:** Telas de Registro e Login com design profissional, gerenciamento de estado via Pinia e proteção de rotas para usuários autenticados.
+* **Painel de Análise Interativo:** Interface para upload de arquivos (CSV/XLSX) e submissão de objetivos de análise em linguagem natural.
+* **Visualização de Dados Avançada:** Renderização de múltiplos tipos de gráficos (barras, linhas, pizza, funil) com a biblioteca de alta performance **ECharts**, incluindo ferramentas de interatividade como zoom e scroll para grandes volumes de dados.
+* **Histórico de Análises Pessoal:** Uma página protegida onde o usuário pode ver e revisitar todas as suas análises salvas anteriormente, com navegação para a visualização detalhada.
 
----
+## 🚀 Stack de Tecnologias
 
-## 🗺️ Roadmap Futuro
+* **Framework:** Vue.js 3 (Composition API)
+* **Linguagem:** TypeScript
+* **Build Tool:** Vite
+* **Gerenciamento de Estado:** Pinia
+* **Roteamento:** Vue Router
+* **Chamadas HTTP:** Axios
+* **Gráficos:** Apache ECharts (via `vue-echarts`)
+* **Estilização:** Tailwind CSS
 
-Abaixo estão algumas funcionalidades e melhorias planejadas para futuras versões:
+## ⚙️ Configuração do Ambiente Local
 
-* **Login Social (OAuth 2.0):** Implementar a opção de "Login com Google" para facilitar o acesso de novos usuários.
-* **Painel Administrativo:** Criar uma área restrita para usuários com a role "Admin", permitindo o gerenciamento de usuários.
-* **Refinamento dos Gráficos:** Adicionar mais opções de customização e tipos de gráficos para o usuário.
-* **Implantação e Acesso Público (Deployment):** Configurar pipelines de CI/CD para automatizar o deploy e hospedar a aplicação em uma plataforma de nuvem (Azure, AWS, etc.).
+Para rodar o frontend localmente, você precisará do Node.js (v18+) e de um gerenciador de pacotes (npm, yarn, etc.).
 
----
+1.  **Clone o repositório:**
+    ```sh
+    git clone [https://github.com/jv-dias/QuiosqueBI.git](https://github.com/jv-dias/QuiosqueBI.git)
+    cd QuiosqueBI
+    ```
+
+2.  **Instale as dependências:**
+    ```sh
+    npm install
+    ```
+
+3.  **Configure a URL da API:**
+    Para que o frontend saiba onde encontrar o backend localmente, crie um arquivo chamado `.env.local` na raiz da pasta `frontend`. Este arquivo é ignorado pelo Git. Adicione a seguinte linha:
+    ```
+    VITE_API_URL=http://localhost:5159/api
+    ```
+    *Nota: Garanta que o [backend do QuiosqueBI](https://github.com/jv-dias/QuiosqueBI-Backend) esteja rodando neste endereço.*
+
+4.  **Execute o Servidor de Desenvolvimento:**
+    ```sh
+    npm run dev
+    ```
+    A aplicação estará disponível em `http://localhost:5173`.
+
+## ✨ Destaques da Arquitetura
+
+* **Gerenciamento de Estado com Pinia:** A store de autenticação (`authStore`) gerencia o token JWT, o estado do usuário e a lógica de login/logout de forma centralizada e segura.
+* **Roteamento Seguro:** Utilização de `meta` fields e Navigation Guards do Vue Router para proteger rotas que exigem autenticação, redirecionando usuários não autorizados para a página de login.
+* **Componentização:** A aplicação é construída com componentes reutilizáveis e bem definidos (`AuthForm`, `GraficoAnalise`, `NavBar`), promovendo a manutenibilidade e consistência do código.
+* **CI/CD com GitHub Actions:** O projeto está configurado para deploy contínuo no **Azure Static Web Apps**. Cada `push` para a branch `main` dispara um workflow que automaticamente faz o build e a implantação da nova versão do site.
 
 ## 📜 Licença
 
-Este projeto é de código aberto para fins educacionais e de portfólio, sob a licença MIT.
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE.md) para mais detalhes.

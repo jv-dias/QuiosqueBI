@@ -4,6 +4,9 @@ import { useRoute } from 'vue-router';
 import axios from 'axios';
 import GraficoAnalise from '@/components/charts/GraficoAnalise.vue';
 
+// Adicione esta linha para pegar a base da API do ambiente
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const route = useRoute();
 const analise = ref<any>(null);
 const carregando = ref(true);
@@ -19,7 +22,7 @@ const resultadosParseados = computed(() => {
           titulo: resultado.Titulo,
           tipoGrafico: resultado.TipoGrafico,
           dados: (resultado.Dados || []).map((pontoDoGrafico: any) => {
-            
+
             let categoriaFormatada = pontoDoGrafico.Categoria;
 
             // *** NOVA LÓGICA DE FORMATAÇÃO DE DATA AQUI ***
@@ -46,12 +49,12 @@ const resultadosParseados = computed(() => {
 });
 
 function mapChartType(tipoApi: string): string {
-    switch (tipoApi?.toLowerCase()) {
-        case 'barras': return 'bar';
-        case 'linha': return 'line';
-        case 'pizza': return 'pie';
-        default: return 'bar';
-    }
+  switch (tipoApi?.toLowerCase()) {
+    case 'barras': return 'bar';
+    case 'linha': return 'line';
+    case 'pizza': return 'pie';
+    default: return 'bar';
+  }
 }
 
 onMounted(async () => {
@@ -61,9 +64,10 @@ onMounted(async () => {
     carregando.value = false;
     return;
   }
-  
+
   try {
-    const url = `http://localhost:5159/api/analise/historico/${id}`;
+    // Use a variável de ambiente aqui
+    const url = `${API_BASE_URL}/analise/historico/${id}`;
     const response = await axios.get(url);
     analise.value = response.data;
   } catch (e: any) {
@@ -85,10 +89,8 @@ onMounted(async () => {
 
       <div class="space-y-8">
         <div v-for="(resultado, index) in resultadosParseados" :key="index" class="p-6 bg-white rounded-lg shadow-xl">
-          <GraficoAnalise 
-  :titulo="resultado.titulo"
-  :tipo="mapChartType(resultado.tipoGrafico)"
-  :dados="resultado.dados"  />
+          <GraficoAnalise :titulo="resultado.titulo" :tipo="mapChartType(resultado.tipoGrafico)"
+            :dados="resultado.dados" />
         </div>
       </div>
     </div>

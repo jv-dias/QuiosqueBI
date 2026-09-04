@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useAnaliseStore } from '@/stores/analiseStore';
 
 const props = defineProps({
   tipo: {
@@ -17,8 +16,6 @@ const props = defineProps({
   }
 });
 
-const analiseStore = useAnaliseStore();
-
 // Detecção reativa de tela mobile
 const isMobile = ref(false);
 const updateScreenSize = () => {
@@ -34,34 +31,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateScreenSize);
-});
-
-const dadosFiltrados = computed(() => {
-  const filtros = analiseStore.filtrosAtivos;
-  const perfilamento = analiseStore.perfilamentoAtual;
-
-  if (Object.keys(filtros).length === 0) return props.dados;
-
-  return props.dados.filter(item => {
-    for (const [nomeColuna, valor] of Object.entries(filtros)) {
-      const meta = perfilamento.find(
-        m => m.nomeColuna.toLowerCase() === nomeColuna.toLowerCase()
-      );
-      if (!meta) continue;
-
-      if (meta.sugestaoFiltro === 'caixaSelecao') {
-        const selecionados = valor as string[];
-        if (selecionados.length > 0 && !selecionados.includes(String(item.categoria))) return false;
-      } else if (meta.sugestaoFiltro === 'controleIntervalo') {
-        const [min, max] = valor as [number, number];
-        if (item.valor < min || item.valor > max) return false;
-      } else if (meta.sugestaoFiltro === 'seletorData') {
-        const dataStr = valor as string;
-        if (dataStr && !String(item.categoria).startsWith(dataStr)) return false;
-      }
-    }
-    return true;
-  });
 });
 
 const option = computed(() => {
@@ -99,10 +68,10 @@ const option = computed(() => {
       ...baseOptions,
       xAxis: {
         type: 'category' as const,
-        data: dadosFiltrados.value.map(item => item.categoria),
+        data: props.dados.map(item => item.categoria),
         axisLabel: {
           rotate: isMobile.value ? 35 : 0,
-          interval: isMobile.value && dadosFiltrados.value.length > 6 ? 'auto' : 0,
+          interval: isMobile.value && props.dados.length > 6 ? 'auto' : 0,
           fontSize: isMobile.value ? 11 : 12,
           formatter: (val: string) => {
             if (typeof val === 'string' && val.length > 12) {
@@ -138,7 +107,7 @@ const option = computed(() => {
         }
       ],
       series: [{
-        data: dadosFiltrados.value.map(item => item.valor),
+        data: props.dados.map(item => item.valor),
         type: props.tipo,
         itemStyle: {
           borderRadius: props.tipo === 'bar' ? [4, 4, 0, 0] : 0
@@ -197,7 +166,7 @@ const option = computed(() => {
         labelLine: {
           show: !isMobile.value
         },
-        data: dadosFiltrados.value.map(item => ({
+        data: props.dados.map(item => ({
           value: item.valor,
           name: item.categoria
         })),
@@ -241,7 +210,7 @@ const option = computed(() => {
         : {
             orient: 'vertical' as const,
             left: 'left',
-            data: dadosFiltrados.value.map(item => item.categoria)
+            data: props.dados.map(item => item.categoria)
           },
       series: [{
         name: 'Funil',
@@ -255,7 +224,7 @@ const option = computed(() => {
           position: 'inside' as const,
           fontSize: isMobile.value ? 11 : 12
         },
-        data: dadosFiltrados.value
+        data: props.dados
           .slice()
           .sort((a, b) => b.valor - a.valor)
           .map(item => ({
@@ -273,7 +242,7 @@ const option = computed(() => {
 <template>
   <div class="w-full">
     <v-chart
-      v-if="dadosFiltrados && dadosFiltrados.length > 0"
+      v-if="dados && dados.length > 0"
       class="w-full"
       :option="option"
       autoresize

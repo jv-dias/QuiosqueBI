@@ -3,15 +3,12 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import axios from 'axios';
 import GraficoAnalise from '@/components/charts/GraficoAnalise.vue';
-import FiltrosDinamicos from '@/components/FiltrosDinamicos.vue';
 import NavBar from '@/components/NavBar.vue';
 import Footer from '@/components/Footer.vue';
-import { useAnaliseStore } from '@/stores/analiseStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const route = useRoute();
-const analiseStore = useAnaliseStore();
 const analise = ref<any>(null);
 const carregando = ref(true);
 const erro = ref<string | null>(null);
@@ -70,8 +67,6 @@ onMounted(async () => {
     const url = `${API_BASE_URL}/analise/historico/${id}`;
     const response = await axios.get(url);
     analise.value = response.data;
-
-    await analiseStore.carregarPerfilamento(Number(id));
   } catch (e: any) {
     erro.value = "Análise não encontrada ou erro ao buscar os dados.";
     console.error(e);
@@ -123,8 +118,6 @@ onMounted(async () => {
             <strong class="text-gray-800">Objetivo:</strong> "{{ analise.contexto }}"
           </p>
         </div>
-
-        <FiltrosDinamicos :perfilamento="analiseStore.perfilamentoAtual" />
 
         <div class="space-y-6 sm:space-y-8">
           <div

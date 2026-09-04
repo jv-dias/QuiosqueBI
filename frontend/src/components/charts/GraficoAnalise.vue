@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, defineProps } from 'vue';
-import { DataZoomComponent } from 'echarts/components';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useAnaliseStore } from '@/stores/analiseStore';
 
-// As props que o componente recebe continuam as mesmas
 const props = defineProps({
   tipo: {
     type: String,
@@ -18,160 +17,270 @@ const props = defineProps({
   }
 });
 
-// A principal mudança: criamos um único objeto 'option' para a ECharts
+const analiseStore = useAnaliseStore();
+
+// Detecção reativa de tela mobile
+const isMobile = ref(false);
+const updateScreenSize = () => {
+  if (typeof window !== 'undefined') {
+    isMobile.value = window.innerWidth < 640;
+  }
+};
+
+onMounted(() => {
+  updateScreenSize();
+  window.addEventListener('resize', updateScreenSize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenSize);
+});
+
+const dadosFiltrados = computed(() => {
+  const filtros = analiseStore.filtrosAtivos;
+  const perfilamento = analiseStore.perfilamentoAtual;
+
+  if (Object.keys(filtros).length === 0) return props.dados;
+
+  return props.dados.filter(item => {
+    for (const [nomeColuna, valor] of Object.entries(filtros)) {
+      const meta = perfilamento.find(
+        m => m.nomeColuna.toLowerCase() === nomeColuna.toLowerCase()
+      );
+      if (!meta) continue;
+
+      if (meta.sugestaoFiltro === 'caixaSelecao') {
+        const selecionados = valor as string[];
+        if (selecionados.length > 0 && !selecionados.includes(String(item.categoria))) return false;
+      } else if (meta.sugestaoFiltro === 'controleIntervalo') {
+        const [min, max] = valor as [number, number];
+        if (item.valor < min || item.valor > max) return false;
+      } else if (meta.sugestaoFiltro === 'seletorData') {
+        const dataStr = valor as string;
+        if (dataStr && !String(item.categoria).startsWith(dataStr)) return false;
+      }
+    }
+    return true;
+  });
+});
+
 const option = computed(() => {
-  // Configurações base que são comuns a quase todos os gráficos
   const baseOptions = {
     title: {
       text: props.titulo,
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'axis', // O tooltip aparece ao passar o mouse sobre o eixo
-      axisPointer: {
-        type: 'shadow'
+      left: 'center',
+      top: 5,
+      textStyle: {
+        fontSize: isMobile.value ? 14 : 16,
+        fontWeight: 'bold' as const,
+        color: '#1f2937'
       }
     },
+    tooltip: {
+      trigger: 'axis' as const,
+      confine: true, // Garante que o tooltip nunca ultrapasse os limites da tela no celular
+      axisPointer: {
+        type: 'shadow' as const
+      },
+      extraCssText: 'border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.12);'
+    },
     grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
+      left: '2%',
+      right: '3%',
+      top: isMobile.value ? 55 : 65,
+      bottom: isMobile.value ? '14%' : '8%',
       containLabel: true
     },
-    series: [] as any[] // As séries de dados serão preenchidas abaixo
+    series: [] as any[]
   };
 
-  // Lógica para cada tipo de gráfico
   if (props.tipo === 'bar' || props.tipo === 'line') {
     return {
       ...baseOptions,
       xAxis: {
-        type: 'category',
-        data: props.dados.map(item => item.categoria)
+        type: 'category' as const,
+        data: dadosFiltrados.value.map(item => item.categoria),
+        axisLabel: {
+          rotate: isMobile.value ? 35 : 0,
+          interval: isMobile.value && dadosFiltrados.value.length > 6 ? 'auto' : 0,
+          fontSize: isMobile.value ? 11 : 12,
+          formatter: (val: string) => {
+            if (typeof val === 'string' && val.length > 12) {
+              return val.slice(0, 10) + '…';
+            }
+            return val;
+          }
+        }
       },
       yAxis: {
-        type: 'value'
-      },      
+        type: 'value' as const,
+        axisLabel: {
+          fontSize: isMobile.value ? 11 : 12
+        }
+      },
       dataZoom: [
         {
-          type: 'inside', // Habilita o zoom com o scroll do mouse e o pan (arrastar)
-          start: 0,       // Posição inicial do zoom (0% do início)
-          end: 100         // Posição final do zoom (mostra os primeiros 20% dos dados)
+          type: 'inside' as const,
+          start: 0,
+          end: 100
         },
         {
-          type: 'slider', // Adiciona a barra de rolagem na parte inferior
+          type: 'slider' as const,
           start: 0,
           end: 100,
-          //bottom: 5,
-          // Estilização opcional da barra de rolagem
-          handleIcon: 'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7v-1.2h6.6V24.4z M13.3,22H6.7v-1.2h6.6V22z',
-          handleSize: '80%',
+          bottom: 2,
+          height: isMobile.value ? 18 : 24,
+          handleSize: '100%',
           handleStyle: {
-            color: '#fff',
-            shadowBlur: 3,
-            shadowColor: 'rgba(0, 0, 0, 0.6)',
-            shadowOffsetX: 2,
-            shadowOffsetY: 2,
-          },
+            color: '#2563eb',
+            shadowBlur: 3
+          }
         }
       ],
       series: [{
-        data: props.dados.map(item => item.valor),
-        type: props.tipo // 'bar' ou 'line'
+        data: dadosFiltrados.value.map(item => item.valor),
+        type: props.tipo,
+        itemStyle: {
+          borderRadius: props.tipo === 'bar' ? [4, 4, 0, 0] : 0
+        },
+        smooth: props.tipo === 'line'
       }]
     };
   }
 
-if (props.tipo === 'pie') {
-  return {
-    title: {
-      text: props.titulo,
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item'
-    },
-    // ===================================================================
-    // ALTERAÇÕES NA LEGENDA
-    // ===================================================================
-    legend: {
-      orient: 'vertical', // 1. Garante que a legenda fique em uma única coluna vertical
-      left: 'left',       // 2. Alinha a legenda à esquerda do contêiner do gráfico
-      top: 'center',      // 3. Centraliza a legenda verticalmente
-      itemGap: 15,        // 4. Aumenta o espaçamento vertical entre cada item da legenda
-      padding: [0, 50, 0, 20] // Adiciona um padding para afastar do gráfico
-    },
-    // ===================================================================
-    series: [{
-      type: 'pie',
-      // 5. Ajustamos o raio e o centro para dar espaço à legenda
-      radius: '70%', 
-      center: ['70%', '50%'], // Move o centro do gráfico um pouco para a direita
-      data: props.dados.map(item => ({
-        value: item.valor,
-        name: item.categoria
-      })),
-      emphasis: {
-        itemStyle: {
-          shadowBlur: 10,
-          shadowOffsetX: 0,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
+  if (props.tipo === 'pie') {
+    return {
+      title: {
+        text: props.titulo,
+        left: 'center',
+        top: 5,
+        textStyle: {
+          fontSize: isMobile.value ? 14 : 16,
+          fontWeight: 'bold' as const,
+          color: '#1f2937'
         }
-      }
-    }]
-  };
-}
-
-if (props.tipo === 'funil') {
-  return {
-    title: {
-      text: props.titulo,
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item',
-      formatter: '{b}: {c} ({d}%)' // Formato do tooltip: Categoria: Valor (Porcentagem)
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      data: props.dados.map(item => item.categoria)
-    },
-    series: [{
-      name: 'Funil',
-      type: 'funnel',
-      left: '25%', // Dá espaço para a legenda
-      width: '65%',
-      label: {
-        show: true,
-        position: 'inside'
       },
-      data: props.dados
-        .sort((a, b) => b.valor - a.valor) // O funil precisa que os dados estejam ordenados do maior para o menor
-        .map(item => ({
+      tooltip: {
+        trigger: 'item' as const,
+        confine: true,
+        formatter: '{b}: {c} ({d}%)',
+        extraCssText: 'border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.12);'
+      },
+      legend: isMobile.value
+        ? {
+            orient: 'horizontal' as const,
+            bottom: 0,
+            left: 'center',
+            type: 'scroll' as const,
+            pageButtonPosition: 'end' as const,
+            itemGap: 10,
+            itemWidth: 12,
+            itemHeight: 12,
+            textStyle: { fontSize: 11 }
+          }
+        : {
+            orient: 'vertical' as const,
+            left: 'left',
+            top: 'center',
+            itemGap: 12,
+            padding: [0, 20, 0, 10]
+          },
+      series: [{
+        type: 'pie' as const,
+        radius: isMobile.value ? ['32%', '60%'] : ['40%', '70%'],
+        center: isMobile.value ? ['50%', '45%'] : ['65%', '52%'],
+        avoidLabelOverlap: true,
+        label: {
+          show: !isMobile.value,
+          formatter: '{b}: {d}%'
+        },
+        labelLine: {
+          show: !isMobile.value
+        },
+        data: dadosFiltrados.value.map(item => ({
           value: item.valor,
           name: item.categoria
-        }))
-    }]
-  };
-}
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.3)'
+          }
+        }
+      }]
+    };
+  }
 
-  // Retorna uma opção vazia se o tipo não for reconhecido
+  if (props.tipo === 'funil') {
+    return {
+      title: {
+        text: props.titulo,
+        left: 'center',
+        top: 5,
+        textStyle: {
+          fontSize: isMobile.value ? 14 : 16,
+          fontWeight: 'bold' as const,
+          color: '#1f2937'
+        }
+      },
+      tooltip: {
+        trigger: 'item' as const,
+        confine: true,
+        formatter: '{b}: {c} ({d}%)',
+        extraCssText: 'border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.12);'
+      },
+      legend: isMobile.value
+        ? {
+            orient: 'horizontal' as const,
+            bottom: 0,
+            left: 'center',
+            type: 'scroll' as const,
+            textStyle: { fontSize: 11 }
+          }
+        : {
+            orient: 'vertical' as const,
+            left: 'left',
+            data: dadosFiltrados.value.map(item => item.categoria)
+          },
+      series: [{
+        name: 'Funil',
+        type: 'funnel' as const,
+        left: isMobile.value ? '8%' : '25%',
+        width: isMobile.value ? '84%' : '65%',
+        top: isMobile.value ? 50 : 60,
+        bottom: isMobile.value ? 40 : 25,
+        label: {
+          show: true,
+          position: 'inside' as const,
+          fontSize: isMobile.value ? 11 : 12
+        },
+        data: dadosFiltrados.value
+          .slice()
+          .sort((a, b) => b.valor - a.valor)
+          .map(item => ({
+            value: item.valor,
+            name: item.categoria
+          }))
+      }]
+    };
+  }
+
   return {};
 });
 </script>
 
 <template>
-  <div>
+  <div class="w-full">
     <v-chart
-      v-if="dados && dados.length > 0"
-      class="chart"
+      v-if="dadosFiltrados && dadosFiltrados.length > 0"
+      class="w-full"
       :option="option"
       autoresize
-      style="height: 400px;"
+      :style="{ height: isMobile ? '330px' : '400px' }"
     />
-    <div v-else class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-        <p class="text-gray-400">Não há dados para exibir neste gráfico.</p>
+    <div v-else class="h-56 sm:h-64 flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+      <p class="text-sm text-gray-400">Não há dados para exibir neste gráfico.</p>
     </div>
   </div>
 </template>

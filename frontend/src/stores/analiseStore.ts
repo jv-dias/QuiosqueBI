@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
+import type { MetadadosColuna } from '@/tipos/perfilamento'
 
 interface DadosGrafico {
   categoria: string;
@@ -35,6 +36,9 @@ export const useAnaliseStore = defineStore('analise', () => {
   const carregando = ref(false)
   const erro = ref<string | null>(null)
   const carregandoDebug = ref(false);
+
+  const perfilamentoAtual = ref<MetadadosColuna[]>([])
+  const filtrosAtivos = ref<Record<string, unknown>>({})
 
   async function analisarArquivo(formData: FormData) {
     carregando.value = true
@@ -91,6 +95,29 @@ export const useAnaliseStore = defineStore('analise', () => {
     }
   }
 
+  async function carregarPerfilamento(analiseId: number) {
+    try {
+      const resposta = await axios.get(`${API_BASE_URL}/analise/${analiseId}/perfilamento`)
+      perfilamentoAtual.value = resposta.data
+      filtrosAtivos.value = {}
+    } catch (e: any) {
+      // 204 = perfilamento ainda não executado; não é erro crítico
+      if (e.response?.status !== 204) {
+        console.error('Erro ao carregar perfilamento:', e)
+      }
+      perfilamentoAtual.value = []
+      filtrosAtivos.value = {}
+    }
+  }
+
+  function definirFiltro(nomeColuna: string, valor: unknown) {
+    filtrosAtivos.value = { ...filtrosAtivos.value, [nomeColuna]: valor }
+  }
+
+  function limparFiltros() {
+    filtrosAtivos.value = {}
+  }
+
   return {
     resultados,
     carregando,
@@ -100,6 +127,11 @@ export const useAnaliseStore = defineStore('analise', () => {
     analisarArquivo,
     obterDadosDepuracao,
     historico,
-    buscarHistorico
+    buscarHistorico,
+    perfilamentoAtual,
+    filtrosAtivos,
+    carregarPerfilamento,
+    definirFiltro,
+    limparFiltros,
   }
 })

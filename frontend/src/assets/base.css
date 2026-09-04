@@ -58,8 +58,17 @@
   font-weight: normal;
 }
 
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
   color: var(--color-text);
   background: var(--color-background);
   transition:
@@ -83,6 +92,7 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Layout utilitário para footer fixo no final */

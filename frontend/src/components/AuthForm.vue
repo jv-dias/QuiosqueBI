@@ -106,11 +106,11 @@ function submitForm() {
 </script>
 
 <template>
-  <div class="p-8 bg-white rounded-lg shadow-md w-96">
-    <h2 class="text-2xl font-bold text-center mb-6">{{ props.title }}</h2>
+  <div class="w-full max-w-md mx-auto p-4 sm:p-6 md:p-8 bg-white rounded-xl">
+    <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">{{ props.title }}</h2>
 
     <!-- Exibição de erro -->
-    <div v-if="formError || authStore.error" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+    <div v-if="formError || authStore.error" class="mb-5 p-3.5 bg-red-50 border border-red-300 text-red-700 text-sm rounded-lg">
       <template v-if="isEmailDuplicateError">
         Este email já está cadastrado. Por favor, tente outro email ou faça
         <RouterLink to="/login" class="font-medium text-blue-600 hover:text-blue-500 underline">
@@ -122,19 +122,31 @@ function submitForm() {
       </template>
     </div>
 
-    <form @submit.prevent="submitForm" class="space-y-6">
+    <form @submit.prevent="submitForm" class="space-y-4 sm:space-y-5">
       <!-- Campos de Registro -->
       <template v-if="isRegistering">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
             <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
-            <input type="text" id="nome" v-model="nome" required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+            <input
+              type="text"
+              id="nome"
+              v-model="nome"
+              required
+              autocomplete="given-name"
+              class="mt-1 block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
+            />
           </div>
           <div>
             <label for="sobrenome" class="block text-sm font-medium text-gray-700">Sobrenome</label>
-            <input type="text" id="sobrenome" v-model="sobrenome" required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+            <input
+              type="text"
+              id="sobrenome"
+              v-model="sobrenome"
+              required
+              autocomplete="family-name"
+              class="mt-1 block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm"
+            />
           </div>
         </div>
       </template>
@@ -142,36 +154,66 @@ function submitForm() {
       <!-- Email -->
       <div>
         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-        <input type="email" id="email" v-model="email" required
-          :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
-            isEmailValid ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']" />
-        <p v-if="!isEmailValid && email" class="mt-1 text-sm text-red-600">Por favor, informe um email válido.</p>
+        <input
+          type="email"
+          id="email"
+          v-model="email"
+          required
+          autocomplete="email"
+          inputmode="email"
+          :class="[
+            'mt-1 block w-full px-3.5 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 text-base sm:text-sm',
+            isEmailValid ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500'
+          ]"
+        />
+        <p v-if="!isEmailValid && email" class="mt-1 text-xs sm:text-sm text-red-600">Por favor, informe um email válido.</p>
       </div>
 
       <!-- Senha -->
       <div>
         <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
-        <input type="password" id="password" v-model="password" required
-          :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
-            isPasswordStrong ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']" />
-        <p v-if="!isPasswordStrong && password" class="mt-1 text-sm text-red-600">A senha deve ter pelo menos 6
-          caracteres.
+        <input
+          type="password"
+          id="password"
+          v-model="password"
+          required
+          autocomplete="current-password"
+          :class="[
+            'mt-1 block w-full px-3.5 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 text-base sm:text-sm',
+            isPasswordStrong ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500'
+          ]"
+        />
+        <p v-if="!isPasswordStrong && password" class="mt-1 text-xs sm:text-sm text-red-600">
+          A senha deve ter pelo menos 6 caracteres.
         </p>
       </div>
 
       <!-- Confirmação de Senha para Registro -->
       <div v-if="isRegistering">
         <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirme a Senha</label>
-        <input type="password" id="confirmPassword" v-model="confirmPassword" required
-          :class="['mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm',
-            doPasswordsMatch ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500']" />
-        <p v-if="!doPasswordsMatch && confirmPassword" class="mt-1 text-sm text-red-600">As senhas não conferem.</p>
+        <input
+          type="password"
+          id="confirmPassword"
+          v-model="confirmPassword"
+          required
+          autocomplete="new-password"
+          :class="[
+            'mt-1 block w-full px-3.5 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 text-base sm:text-sm',
+            doPasswordsMatch ? 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' : 'border-red-300 focus:ring-red-500 focus:border-red-500'
+          ]"
+        />
+        <p v-if="!doPasswordsMatch && confirmPassword" class="mt-1 text-xs sm:text-sm text-red-600">As senhas não conferem.</p>
       </div>
 
-      <div>
-        <button type="submit" :disabled="!isFormValid"
-          :class="['w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none',
-            isFormValid ? 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500' : 'bg-blue-300 cursor-not-allowed']">
+      <div class="pt-2">
+        <button
+          type="submit"
+          :disabled="!isFormValid"
+          :class="[
+            'w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white focus:outline-none transition-colors duration-150',
+            isFormValid ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500' : 'bg-blue-300 cursor-not-allowed'
+          ]"
+        >
           {{ props.buttonText }}
         </button>
       </div>
